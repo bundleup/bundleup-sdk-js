@@ -10,6 +10,7 @@ Official JavaScript/TypeScript SDK for the [BundleUp](https://bundleup.io) API. 
 - [Installation](#installation)
 - [Requirements](#requirements)
 - [Features](#features)
+- [Examples](#examples)
 - [Quick Start](#quick-start)
 - [Authentication](#authentication)
 - [Core Concepts](#core-concepts)
@@ -79,6 +80,15 @@ globalThis.fetch = fetch;
 - 🪶 **Lightweight** - Zero dependencies beyond native fetch API
 - 🛡️ **Error Handling** - Comprehensive error messages and validation
 - 📚 **Well Documented** - Extensive documentation and examples
+
+## Examples
+
+Runnable examples are available in the [`examples/`](./examples) directory:
+
+- [`examples/basic_usage.js`](./examples/basic_usage.js) - Client setup, connections, integrations, and webhooks
+- [`examples/proxy_api.js`](./examples/proxy_api.js) - Proxy API GET request with a connection
+- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, and PM endpoint usage
+- [`examples/README.md`](./examples/README.md) - Setup and execution instructions
 
 ## Quick Start
 
