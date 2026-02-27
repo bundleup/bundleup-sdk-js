@@ -473,7 +473,7 @@ function verifyWebhookSignature(payload, signature, secret) {
 
 // In your webhook handler
 app.post('/webhook', (req, res) => {
-  const signature = req.headers['x-bundleup-signature'];
+  const signature = req.headers['bundleup-signature'];
   const payload = JSON.stringify(req.body);
 
   if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
@@ -1028,7 +1028,7 @@ We welcome contributions to the BundleUp JavaScript SDK! Here's how you can help
 This package is available as open source under the terms of the [ISC License](https://opensource.org/licenses/ISC).
 
 ```
-Copyright (c) 2024 BundleUp
+Copyright (c) 2026 BundleUp
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
