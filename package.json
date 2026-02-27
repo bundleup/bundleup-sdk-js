@@ -2,6 +2,14 @@
   "name": "@bundleup/sdk",
   "version": "0.0.18",
   "description": "Official JavaScript/TypeScript SDK for BundleUp",
+  "homepage": "https://github.com/bundleup/bundleup-sdk-js#readme",
+  "bugs": {
+    "url": "https://github.com/bundleup/bundleup-sdk-js/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bundleup/bundleup-sdk-js.git"
+  },
   "license": "ISC",
   "author": "BundleUp",
   "exports": {
