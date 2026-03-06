@@ -24,7 +24,6 @@ Official JavaScript/TypeScript SDK for the [BundleUp](https://bundleup.io) API. 
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
-- [Support](#support)
 
 ## Installation
 
@@ -902,9 +901,8 @@ try {
 If you're still experiencing issues:
 
 1. Check the [BundleUp Documentation](https://docs.bundleup.io)
-2. Search [GitHub Issues](https://github.com/bundleup/javascript/issues)
-3. Join our [Community Discord](https://discord.gg/bundleup)
-4. Contact [support@bundleup.io](mailto:support@bundleup.io)
+2. Search [GitHub Issues](https://github.com/bundleup/bundleup-sdk-js/issues)
+3. Contact [support@bundleup.io](mailto:support@bundleup.io)
 
 When reporting issues, please include:
 
@@ -919,8 +917,8 @@ When reporting issues, please include:
 
 ```bash
 # Clone the repository
-git clone https://github.com/bundleup/javascript.git
-cd javascript/packages/sdk
+git clone https://github.com/bundleup/bundleup-sdk-js.git
+cd bundleup-sdk-js/packages/sdk
 
 # Install dependencies
 npm install
@@ -1001,7 +999,7 @@ We welcome contributions to the BundleUp JavaScript SDK! Here's how you can help
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [GitHub Issues](https://github.com/bundleup/javascript/issues)
+1. Check if the bug has already been reported in [GitHub Issues](https://github.com/bundleup/bundleup-sdk-js/issues)
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce
@@ -1052,39 +1050,6 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
-
-## Support
-
-Need help? We're here for you!
-
-### Documentation
-
-- **Official Docs**: [https://docs.bundleup.io](https://docs.bundleup.io)
-- **API Reference**: [https://docs.bundleup.io/api](https://docs.bundleup.io/api)
-- **SDK Guides**: [https://docs.bundleup.io/sdk/javascript](https://docs.bundleup.io/sdk/javascript)
-
-### Community
-
-- **Discord**: [https://discord.gg/bundleup](https://discord.gg/bundleup)
-- **GitHub Discussions**: [https://github.com/bundleup/javascript/discussions](https://github.com/bundleup/javascript/discussions)
-- **Stack Overflow**: Tag your questions with `bundleup`
-
-### Direct Support
-
-- **Email**: [support@bundleup.io](mailto:support@bundleup.io)
-- **GitHub Issues**: [https://github.com/bundleup/javascript/issues](https://github.com/bundleup/javascript/issues)
-- **Twitter**: [@bundleup_io](https://twitter.com/bundleup_io)
-
-### Enterprise Support
-
-For enterprise customers, we offer:
-
-- Priority support with SLA
-- Dedicated support channel
-- Architecture consultation
-- Custom integration assistance
-
-Contact [enterprise@bundleup.io](mailto:enterprise@bundleup.io) for more information.
 
 ## Code of Conduct
 
