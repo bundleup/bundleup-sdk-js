@@ -86,7 +86,7 @@ Runnable examples are available in the [`examples/`](./examples) directory:
 
 - [`examples/basic_usage.js`](./examples/basic_usage.js) - Client setup, connections, integrations, and webhooks
 - [`examples/proxy_api.js`](./examples/proxy_api.js) - Proxy API GET request with a connection
-- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, and Ticketing endpoint usage
+- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, Ticketing, CRM, and Drive endpoint usage
 - [`examples/README.md`](./examples/README.md) - Setup and execution instructions
 
 ## Quick Start
@@ -633,6 +633,43 @@ const unify = client.unify('conn_123abc');
 
 The Chat API provides a unified interface for chat platforms like Slack, Discord, and Microsoft Teams.
 
+##### List Users
+
+Retrieve a list of users from the connected chat platform.
+
+```javascript
+const result = await unify.chat.users({
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Users:', result.data);
+console.log('Next cursor:', result.metadata.next);
+```
+
+**Parameters:**
+
+- `limit` (number, optional): Maximum number of users to return (default: 100, max: 1000)
+- `after` (string, optional): Pagination cursor from previous response
+- `include_raw` (boolean, optional): Include raw API response from the integration (default: false)
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: 'U1234567890',
+      name: 'Jane Doe'
+    }
+  ],
+  metadata: {
+    next: 'cursor_abc123'
+  }
+}
+```
+
 ##### List Channels
 
 Retrieve a list of channels from the connected chat platform.
@@ -694,6 +731,31 @@ do {
 } while (cursor);
 
 console.log(`Fetched ${allChannels.length} total channels`);
+```
+
+##### Send Message
+
+Send a message to a channel on the connected chat platform.
+
+```javascript
+const result = await unify.chat.message('C1234567890', 'Hello from BundleUp! :wave:');
+
+console.log('Message sent:', result.data);
+```
+
+**Parameters:**
+
+- `channelId` (string, required): The ID of the channel to send the message to
+- `text` (string, required): Markdown-formatted message text
+
+**Response:**
+
+```typescript
+{
+  data: {
+    // Raw response data from the chat provider
+  }
+}
 ```
 
 #### Git API
@@ -840,6 +902,33 @@ console.log('Releases:', result.data);
 }
 ```
 
+##### List Branches
+
+```javascript
+const result = await unify.git.branches('organization/repo-name', {
+  limit: 50,
+});
+
+console.log('Branches:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      name: 'main',
+      commit_sha: 'abc123def456',
+      protected: true
+    }
+  ],
+  metadata: {
+    next: null
+  }
+}
+```
+
 #### Ticketing API
 
 The Ticketing API provides a unified interface for ticketing and project management platforms like Jira, Linear, and Asana.
@@ -882,6 +971,106 @@ console.log('Tickets:', result.data);
 ```javascript
 const openTickets = result.data.filter(ticket => ticket.status === 'open');
 const sortedByDate = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+```
+
+#### CRM API
+
+The CRM API provides a unified interface for CRM platforms like Attio, HubSpot, PipeDrive, Salesforce and Zoho.
+
+##### List Companies
+
+```javascript
+const result = await unify.crm.companies({
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Companies:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: '12345',
+      name: 'Acme Inc.',
+      website: 'https://acme.example.com'
+    }
+  ],
+  metadata: {
+    next: null
+  }
+}
+```
+
+##### List Contacts
+
+```javascript
+const result = await unify.crm.contacts({
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Contacts:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: '67890',
+      name: 'Jane Doe',
+      email: 'jane@acme.example.com'
+    }
+  ],
+  metadata: {
+    next: null
+  }
+}
+```
+
+#### Drive API
+
+The Drive API provides a unified interface for file storage platforms like Google Drive, OneDrive, Box, Dropbox and Microsoft SharePoint.
+
+##### List Files
+
+```javascript
+const result = await unify.drive.files({
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Files:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: 'file_123',
+      name: 'quarterly-report.pdf',
+      mime_type: 'application/pdf',
+      size: 204800,
+      created_at: '2024-01-15T10:30:00Z',
+      updated_at: '2024-01-20T14:22:00Z',
+      url: 'https://drive.example.com/file_123',
+      is_folder: false
+    }
+  ],
+  metadata: {
+    next: null
+  }
+}
 ```
 
 ## Error Handling
@@ -950,7 +1139,9 @@ src/
 │   ├── base.ts          # Base Unify class
 │   ├── chat.ts          # Chat Unify API
 │   ├── git.ts           # Git Unify API
-│   └── ticketing.ts     # Ticketing Unify API
+│   ├── ticketing.ts     # Ticketing Unify API
+│   ├── crm.ts           # CRM Unify API
+│   └── drive.ts         # Drive Unify API
 └── __tests__/           # Test files
 ```
 

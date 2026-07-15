@@ -17,6 +17,13 @@ const unify = client.unify(connectionId);
 console.log('Unify API example');
 
 try {
+  const users = await unify.chat.users({ limit: 10 });
+  console.log(`Chat users: ${users.data?.length ?? 0}`);
+} catch (error) {
+  console.error(`Failed to fetch chat users: ${error.message}`);
+}
+
+try {
   const channels = await unify.chat.channels({ limit: 10 });
   console.log(`Chat channels: ${channels.data?.length ?? 0}`);
 } catch (error) {
@@ -35,4 +42,18 @@ try {
   console.log(`Ticketing tickets: ${tickets.data?.length ?? 0}`);
 } catch (error) {
   console.error(`Failed to fetch tickets: ${error.message}`);
+}
+
+try {
+  const companies = await unify.crm.companies({ limit: 10 });
+  console.log(`CRM companies: ${companies.data?.length ?? 0}`);
+} catch (error) {
+  console.error(`Failed to fetch CRM companies: ${error.message}`);
+}
+
+try {
+  const files = await unify.drive.files({ limit: 10 });
+  console.log(`Drive files: ${files.data?.length ?? 0}`);
+} catch (error) {
+  console.error(`Failed to fetch Drive files: ${error.message}`);
 }

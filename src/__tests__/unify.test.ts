@@ -2,6 +2,8 @@ import { Unify } from '../unify';
 import { Chat } from '../unify/chat';
 import { Git } from '../unify/git';
 import { Ticketing } from '../unify/ticketing';
+import { CRM } from '../unify/crm';
+import { Drive } from '../unify/drive';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
@@ -80,6 +82,46 @@ describe('Unify', () => {
       // Access protected properties for testing
       expect((ticketing as any).apiKey).toBe(apiKey);
       expect((ticketing as any).connectionId).toBe(connectionId);
+    });
+  });
+
+  describe('crm getter', () => {
+    it('should return a CRM instance', () => {
+      const crm = unify.crm;
+      expect(crm).toBeInstanceOf(CRM);
+    });
+
+    it('should create a new CRM instance each time', () => {
+      const crm1 = unify.crm;
+      const crm2 = unify.crm;
+      expect(crm1).not.toBe(crm2);
+    });
+
+    it('should initialize CRM with correct apiKey and connectionId', () => {
+      const crm = unify.crm;
+      // Access protected properties for testing
+      expect((crm as any).apiKey).toBe(apiKey);
+      expect((crm as any).connectionId).toBe(connectionId);
+    });
+  });
+
+  describe('drive getter', () => {
+    it('should return a Drive instance', () => {
+      const drive = unify.drive;
+      expect(drive).toBeInstanceOf(Drive);
+    });
+
+    it('should create a new Drive instance each time', () => {
+      const drive1 = unify.drive;
+      const drive2 = unify.drive;
+      expect(drive1).not.toBe(drive2);
+    });
+
+    it('should initialize Drive with correct apiKey and connectionId', () => {
+      const drive = unify.drive;
+      // Access protected properties for testing
+      expect((drive as any).apiKey).toBe(apiKey);
+      expect((drive as any).connectionId).toBe(connectionId);
     });
   });
 

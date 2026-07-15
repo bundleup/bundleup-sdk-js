@@ -1,9 +1,5 @@
 import { Base, type Params, type Response } from './base';
 
-interface RepoParams extends Params {
-  repoName: string;
-}
-
 export class Git extends Base {
   protected namespace = 'git';
 
@@ -47,7 +43,7 @@ export class Git extends Base {
    * @returns A promise that resolves to the fetch response.
    * @throws If repoName is not provided.
    */
-  async pulls(repoName: string, { limit = 100, after, include_raw = false }: RepoParams) {
+  async pulls(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
     if (!repoName) {
       throw new Error('repoName is required to fetch pulls.');
     }
@@ -91,7 +87,7 @@ export class Git extends Base {
    * @returns A promise that resolves to the fetch response.
    * @throws If repoName is not provided.
    */
-  async tags(repoName: string, { limit = 100, after, include_raw = false }: RepoParams) {
+  async tags(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
     if (!repoName) {
       throw new Error('repoName is required to fetch tags.');
     }
@@ -126,7 +122,7 @@ export class Git extends Base {
    * @returns A promise that resolves to the fetch response.
    * @throws If repoName is not provided.
    */
-  async releases(repoName: string, { limit = 100, after, include_raw = false }: RepoParams) {
+  async releases(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
     if (!repoName) {
       throw new Error('repoName is required to fetch releases.');
     }
@@ -154,6 +150,42 @@ export class Git extends Base {
         url: string;
         created_at: string;
         released_at: string | null;
+      }>
+    >;
+  }
+
+  /**
+   * Fetch branches for a specific repository.
+   * @param repoName - The name of the repository.
+   * @param limit - Maximum number of branches to retrieve.
+   * @param after - Cursor for pagination.
+   * @param include_raw - Whether to include raw response data.
+   * @returns A promise that resolves to the fetch response.
+   * @throws If repoName is not provided.
+   */
+  async branches(repoName: string, { limit = 100, after, include_raw = false }: Params) {
+    if (!repoName) {
+      throw new Error('repoName is required to fetch branches.');
+    }
+
+    const url = this.buildUrl(`repos/${encodeURIComponent(repoName)}/branches`, {
+      limit,
+      after,
+      include_raw,
+    });
+
+    const response = await fetch(url, { headers: this.headers });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${this.namespace}/repos/${repoName}/branches: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as Response<
+      Array<{
+        name: string;
+        commit_sha: string;
+        protected: boolean;
       }>
     >;
   }
