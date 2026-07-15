@@ -86,7 +86,7 @@ Runnable examples are available in the [`examples/`](./examples) directory:
 
 - [`examples/basic_usage.js`](./examples/basic_usage.js) - Client setup, connections, integrations, and webhooks
 - [`examples/proxy_api.js`](./examples/proxy_api.js) - Proxy API GET request with a connection
-- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, and PM endpoint usage
+- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, and Ticketing endpoint usage
 - [`examples/README.md`](./examples/README.md) - Setup and execution instructions
 
 ## Quick Start
@@ -840,20 +840,20 @@ console.log('Releases:', result.data);
 }
 ```
 
-#### Project Management API
+#### Ticketing API
 
-The PM API provides a unified interface for project management platforms like Jira, Linear, and Asana.
+The Ticketing API provides a unified interface for ticketing and project management platforms like Jira, Linear, and Asana.
 
-##### List Issues
+##### List Tickets
 
 ```javascript
-const result = await unify.pm.issues({
+const result = await unify.ticketing.tickets({
   limit: 100,
   after: null,
   include_raw: false,
 });
 
-console.log('Issues:', result.data);
+console.log('Tickets:', result.data);
 ```
 
 **Response:**
@@ -880,7 +880,7 @@ console.log('Issues:', result.data);
 **Filtering and sorting:**
 
 ```javascript
-const openIssues = result.data.filter(issue => issue.status === 'open');
+const openTickets = result.data.filter(ticket => ticket.status === 'open');
 const sortedByDate = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 ```
 
@@ -950,7 +950,7 @@ src/
 │   ├── base.ts          # Base Unify class
 │   ├── chat.ts          # Chat Unify API
 │   ├── git.ts           # Git Unify API
-│   └── pm.ts            # PM Unify API
+│   └── ticketing.ts     # Ticketing Unify API
 └── __tests__/           # Test files
 ```
 

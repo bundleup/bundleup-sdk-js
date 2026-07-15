@@ -26,4 +26,4 @@ node examples/unify_api.js
 
 - `basic_usage.js` — initialize the SDK and list connections, integrations, and webhooks
 - `proxy_api.js` — send a GET request through the Proxy API
-- `unify_api.js` — call Unify Chat, Git, and PM endpoints
+- `unify_api.js` — call Unify Chat, Git, and Ticketing endpoints

@@ -1,22 +1,22 @@
 import { Base, type Params, type Response } from './base';
 
-export class PM extends Base {
-  protected namespace = 'pm';
+export class Ticketing extends Base {
+  protected namespace = 'ticketing';
 
   /**
-   * Fetch issues
-   * @param limit - Maximum number of issues to retrieve.
+   * Fetch tickets
+   * @param limit - Maximum number of tickets to retrieve.
    * @param after - Cursor for pagination.
    * @param include_raw - Whether to include raw response data.
    * @returns A promise that resolves to the fetch response.
    */
-  async issues({ limit = 100, after, include_raw = false }: Params = {}) {
-    const url = this.buildUrl('issues', { limit, after, include_raw });
+  async tickets({ limit = 100, after, include_raw = false }: Params = {}) {
+    const url = this.buildUrl('tickets', { limit, after, include_raw });
 
     const response = await fetch(url, { headers: this.headers });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch ${this.namespace}/issues: ${response.statusText}`);
+      throw new Error(`Failed to fetch ${this.namespace}/tickets: ${response.statusText}`);
     }
 
     const data = await response.json();

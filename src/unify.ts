@@ -1,6 +1,6 @@
 import { Chat } from './unify/chat';
 import { Git } from './unify/git';
-import { PM } from './unify/pm';
+import { Ticketing } from './unify/ticketing';
 
 export class Unify {
   constructor(
@@ -23,9 +23,9 @@ export class Unify {
   }
 
   /**
-   * Access the PM API for the connection.
+   * Access the Ticketing API for the connection.
    */
-  get pm() {
-    return new PM(this.apiKey, this.connectionId);
+  get ticketing() {
+    return new Ticketing(this.apiKey, this.connectionId);
   }
 }

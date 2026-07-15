@@ -31,8 +31,8 @@ try {
 }
 
 try {
-  const issues = await unify.pm.issues({ limit: 10 });
-  console.log(`PM issues: ${issues.data?.length ?? 0}`);
+  const tickets = await unify.ticketing.tickets({ limit: 10 });
+  console.log(`Ticketing tickets: ${tickets.data?.length ?? 0}`);
 } catch (error) {
-  console.error(`Failed to fetch PM issues: ${error.message}`);
+  console.error(`Failed to fetch tickets: ${error.message}`);
 }
