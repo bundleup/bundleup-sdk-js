@@ -1,7 +1,7 @@
 import { Unify } from '../unify';
 import { Chat } from '../unify/chat';
 import { Git } from '../unify/git';
-import { PM } from '../unify/pm';
+import { Ticketing } from '../unify/ticketing';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
@@ -63,23 +63,23 @@ describe('Unify', () => {
     });
   });
 
-  describe('pm getter', () => {
-    it('should return a PM instance', () => {
-      const pm = unify.pm;
-      expect(pm).toBeInstanceOf(PM);
+  describe('ticketing getter', () => {
+    it('should return a Ticketing instance', () => {
+      const ticketing = unify.ticketing;
+      expect(ticketing).toBeInstanceOf(Ticketing);
     });
 
-    it('should create a new PM instance each time', () => {
-      const pm1 = unify.pm;
-      const pm2 = unify.pm;
-      expect(pm1).not.toBe(pm2);
+    it('should create a new Ticketing instance each time', () => {
+      const ticketing1 = unify.ticketing;
+      const ticketing2 = unify.ticketing;
+      expect(ticketing1).not.toBe(ticketing2);
     });
 
-    it('should initialize PM with correct apiKey and connectionId', () => {
-      const pm = unify.pm;
+    it('should initialize Ticketing with correct apiKey and connectionId', () => {
+      const ticketing = unify.ticketing;
       // Access protected properties for testing
-      expect((pm as any).apiKey).toBe(apiKey);
-      expect((pm as any).connectionId).toBe(connectionId);
+      expect((ticketing as any).apiKey).toBe(apiKey);
+      expect((ticketing as any).connectionId).toBe(connectionId);
     });
   });
 
