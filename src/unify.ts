@@ -4,6 +4,7 @@ import { Ticketing } from './unify/ticketing';
 import { CRM } from './unify/crm';
 import { Drive } from './unify/drive';
 import { MCP } from './unify/mcp';
+import { Me, type MeParams } from './unify/me';
 
 export class Unify {
   private mcpClient?: MCP;
@@ -46,6 +47,19 @@ export class Unify {
    */
   get drive() {
     return new Drive(this.apiKey, this.connectionId);
+  }
+
+  /**
+   * Fetch the account this connection is authenticated as.
+   *
+   * `me` is the one unified method every provider implements, so it hangs off the
+   * Unify client directly instead of a vertical namespace.
+   *
+   * @param include_raw - Whether to include raw response data.
+   * @returns A promise that resolves to the connected account.
+   */
+  async me(params: MeParams = {}) {
+    return new Me(this.apiKey, this.connectionId).get(params);
   }
 
   /**

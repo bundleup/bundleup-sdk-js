@@ -3,6 +3,7 @@ import { Chat } from '../chat';
 import { CRM } from '../crm';
 import { Drive } from '../drive';
 import { Git } from '../git';
+import { Me } from '../me';
 import { Ticketing } from '../ticketing';
 
 // Mock the global fetch function
@@ -284,5 +285,67 @@ describe('Git', () => {
 
       expect(new URL(callUrl()).searchParams.has('branch')).toBe(false);
     });
+  });
+});
+
+describe('Me', () => {
+  const account = { data: { id: 'u_1', name: 'Ada', email: 'ada@acme.io', avatar_url: null } };
+
+  let me: Me;
+
+  beforeEach(() => {
+    me = new Me(apiKey, connectionId);
+  });
+
+  it('should target the root me endpoint, not a vertical', async () => {
+    mockFetch.mockResolvedValueOnce(ok(account));
+
+    await me.get();
+
+    expect(new URL(callUrl()).pathname).toBe('/v1/me');
+  });
+
+  it('should send the API key and connection ID', async () => {
+    mockFetch.mockResolvedValueOnce(ok(account));
+
+    await me.get();
+
+    expect(callInit().headers).toEqual({
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'BU-Connection-Id': connectionId,
+    });
+  });
+
+  it('should default include_raw and send no paging params', async () => {
+    mockFetch.mockResolvedValueOnce(ok(account));
+
+    await me.get();
+
+    const url = new URL(callUrl());
+
+    expect(url.searchParams.get('include_raw')).toBe('false');
+    expect(url.searchParams.has('limit')).toBe(false);
+    expect(url.searchParams.has('after')).toBe(false);
+  });
+
+  it('should pass include_raw through', async () => {
+    mockFetch.mockResolvedValueOnce(ok(account));
+
+    await me.get({ include_raw: true });
+
+    expect(new URL(callUrl()).searchParams.get('include_raw')).toBe('true');
+  });
+
+  it('should return the parsed account', async () => {
+    mockFetch.mockResolvedValueOnce(ok(account));
+
+    await expect(me.get()).resolves.toEqual(account);
+  });
+
+  it('should throw when me fails', async () => {
+    mockFetch.mockResolvedValueOnce(failed());
+
+    await expect(me.get()).rejects.toThrow('Failed to fetch me: Bad Gateway');
   });
 });

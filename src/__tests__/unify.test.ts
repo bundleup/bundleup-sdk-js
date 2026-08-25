@@ -4,6 +4,7 @@ import { Git } from '../unify/git';
 import { Ticketing } from '../unify/ticketing';
 import { CRM } from '../unify/crm';
 import { Drive } from '../unify/drive';
+import { Me } from '../unify/me';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
@@ -122,6 +123,45 @@ describe('Unify', () => {
       // Access protected properties for testing
       expect((drive as any).apiKey).toBe(apiKey);
       expect((drive as any).connectionId).toBe(connectionId);
+    });
+  });
+
+  describe('me method', () => {
+    const account = { data: { id: 'u_1', name: 'Ada', email: 'ada@acme.io', avatar_url: null } };
+
+    beforeEach(() => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => account,
+      });
+    });
+
+    it('should be a method rather than a namespace getter', () => {
+      expect(typeof unify.me).toBe('function');
+      expect(unify.me).not.toBeInstanceOf(Me);
+    });
+
+    it('should request the root me endpoint with the connection credentials', async () => {
+      await unify.me();
+
+      const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+
+      expect(new URL(url.toString()).pathname).toBe('/v1/me');
+      expect(init.headers.Authorization).toBe(`Bearer ${apiKey}`);
+      expect(init.headers['BU-Connection-Id']).toBe(connectionId);
+    });
+
+    it('should pass include_raw through', async () => {
+      await unify.me({ include_raw: true });
+
+      const [url] = (global.fetch as jest.Mock).mock.calls[0];
+
+      expect(new URL(url.toString()).searchParams.get('include_raw')).toBe('true');
+    });
+
+    it('should resolve to the connected account', async () => {
+      await expect(unify.me()).resolves.toEqual(account);
     });
   });
 
