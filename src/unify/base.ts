@@ -1,4 +1,4 @@
-import { isObject } from '../utils';
+import { isObject } from '../utils/helpers';
 
 export interface Params {
   limit?: number;

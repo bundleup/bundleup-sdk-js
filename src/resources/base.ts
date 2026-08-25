@@ -1,4 +1,4 @@
-import { isEmpty, isObject } from '../utils';
+import { isEmpty, isObject } from '../utils/helpers';
 
 export abstract class Base<T> {
   protected abstract namespace: string;
@@ -7,7 +7,7 @@ export abstract class Base<T> {
 
   constructor(private apiKey: string) {}
 
-  private buildUrl(path?: string | null, searchParams: Record<string, unknown> = {}): URL {
+  protected buildUrl(path?: string | null, searchParams: Record<string, unknown> = {}): URL {
     if (!isObject(searchParams)) {
       throw new Error('URL search params must be an object.');
     }

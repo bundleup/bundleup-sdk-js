@@ -1,4 +1,4 @@
-import { isEmpty, isObject } from '../utils';
+import { isEmpty, isObject } from '../helpers';
 
 describe('isObject', () => {
   it('should return true for plain objects', () => {

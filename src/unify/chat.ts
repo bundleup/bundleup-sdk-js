@@ -1,3 +1,4 @@
+import { isEmpty } from '../utils/helpers';
 import { Base, type Params, type Response } from './base';
 
 export class Chat extends Base {
@@ -61,7 +62,7 @@ export class Chat extends Base {
    * @throws If channelId is not provided.
    */
   async message(channelId: string, text: string) {
-    if (!channelId) {
+    if (isEmpty(channelId)) {
       throw new Error('channelId is required to send a message.');
     }
 

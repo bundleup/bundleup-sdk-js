@@ -1,4 +1,4 @@
-import { isEmpty, isObject } from './utils';
+import { isEmpty, isObject } from './utils/helpers';
 
 export class Proxy {
   private baseUrl = 'https://proxy.bundleup.io';
@@ -30,6 +30,12 @@ export class Proxy {
     return url;
   }
 
+  /**
+   * Send a GET request to the specified path with optional headers.
+   *
+   * @param path - The endpoint path relative to the proxy server.
+   * @param headers - Extra headers to include in the request.
+   */
   public get(path: string, headers: Record<string, string> = {}) {
     if (isEmpty(path)) {
       throw new Error('Path is required for GET request.');
@@ -47,6 +53,13 @@ export class Proxy {
     });
   }
 
+  /**
+   * Send a POST request to the specified path with a JSON body and optional headers.
+   *
+   * @param path - The endpoint path relative to the proxy server.
+   * @param body - The request body.
+   * @param headers - Extra headers to include in the request.
+   */
   public post(path: string, body: BodyInit, headers: Record<string, string> = {}) {
     if (isEmpty(path)) {
       throw new Error('Path is required for POST request.');
@@ -65,6 +78,13 @@ export class Proxy {
     });
   }
 
+  /**
+   * Send a PUT request to the specified path with a JSON body and optional headers.
+   *
+   * @param path - The endpoint path relative to the proxy server.
+   * @param body - The request body.
+   * @param headers - Extra headers to include in the request.
+   */
   public put(path: string, body: BodyInit, headers: Record<string, string> = {}) {
     if (isEmpty(path)) {
       throw new Error('Path is required for PUT request.');
@@ -83,6 +103,13 @@ export class Proxy {
     });
   }
 
+  /**
+   * Send a PATCH request to the specified path with a JSON body and optional headers.
+   *
+   * @param path - The endpoint path relative to the proxy server.
+   * @param body - The request body.
+   * @param headers - Extra headers to include in the request.
+   */
   public patch(path: string, body: BodyInit, headers: Record<string, string> = {}) {
     if (isEmpty(path)) {
       throw new Error('Path is required for PATCH request.');
@@ -101,6 +128,12 @@ export class Proxy {
     });
   }
 
+  /**
+   * Send a DELETE request to the specified path with optional headers.
+   *
+   * @param path - The endpoint path relative to the proxy server.
+   * @param headers - Extra headers to include in the request.
+   */
   public delete(path: string, headers: Record<string, string> = {}) {
     if (isEmpty(path)) {
       throw new Error('Path is required for DELETE request.');

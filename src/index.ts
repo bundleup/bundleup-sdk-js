@@ -1,6 +1,7 @@
+import { MCP } from './mcp';
 import { Proxy } from './proxy';
 import { Unify } from './unify';
-import { isEmpty } from './utils';
+import { isEmpty } from './utils/helpers';
 
 // Resources
 import { Connections } from './resources/connection';
@@ -63,5 +64,23 @@ export class BundleUp {
     }
 
     return new Unify(this.apiKey, connectionId);
+  }
+
+  /**
+   * Create an MCP client for a specific connection.
+   *
+   * The connection selects which provider's MCP server the client talks to and
+   * whose credentials are used, so one instance per end user is the expected
+   * pattern.
+   *
+   * @param connectionId - The ID of the connection.
+   * @returns An MCP instance.
+   */
+  mcp(connectionId: string) {
+    if (isEmpty(connectionId)) {
+      throw new Error('Connection ID is required to create an MCP instance.');
+    }
+
+    return new MCP(this.apiKey, connectionId);
   }
 }

@@ -20,6 +20,7 @@ From `bundleup-sdk-js/`:
 node examples/basic_usage.js
 node examples/proxy_api.js
 node examples/unify_api.js
+node examples/mcp_api.js
 ```
 
 ## Scripts
@@ -27,3 +28,4 @@ node examples/unify_api.js
 - `basic_usage.js` — initialize the SDK and list connections, integrations, and webhooks
 - `proxy_api.js` — send a GET request through the Proxy API
 - `unify_api.js` — call Unify Chat, Git, and Ticketing endpoints
+- `mcp_api.js` — open an MCP session against the provider's server for a connection

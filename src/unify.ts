@@ -3,8 +3,11 @@ import { Git } from './unify/git';
 import { Ticketing } from './unify/ticketing';
 import { CRM } from './unify/crm';
 import { Drive } from './unify/drive';
+import { MCP } from './unify/mcp';
 
 export class Unify {
+  private mcpClient?: MCP;
+
   constructor(
     private apiKey: string,
     private connectionId: string,
@@ -43,5 +46,16 @@ export class Unify {
    */
   get drive() {
     return new Drive(this.apiKey, this.connectionId);
+  }
+
+  /**
+   * Access the MCP API for the connection.
+   */
+  get mcp() {
+    if (!this.mcpClient) {
+      this.mcpClient = new MCP(this.apiKey, this.connectionId);
+    }
+
+    return this.mcpClient;
   }
 }

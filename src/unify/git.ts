@@ -1,3 +1,4 @@
+import { isEmpty } from '../utils/helpers';
 import { Base, type Params, type Response } from './base';
 
 export class Git extends Base {
@@ -44,7 +45,7 @@ export class Git extends Base {
    * @throws If repoName is not provided.
    */
   async pulls(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
-    if (!repoName) {
+    if (isEmpty(repoName)) {
       throw new Error('repoName is required to fetch pulls.');
     }
 
@@ -88,7 +89,7 @@ export class Git extends Base {
    * @throws If repoName is not provided.
    */
   async tags(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
-    if (!repoName) {
+    if (isEmpty(repoName)) {
       throw new Error('repoName is required to fetch tags.');
     }
 
@@ -123,7 +124,7 @@ export class Git extends Base {
    * @throws If repoName is not provided.
    */
   async releases(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
-    if (!repoName) {
+    if (isEmpty(repoName)) {
       throw new Error('repoName is required to fetch releases.');
     }
 
@@ -163,8 +164,8 @@ export class Git extends Base {
    * @returns A promise that resolves to the fetch response.
    * @throws If repoName is not provided.
    */
-  async branches(repoName: string, { limit = 100, after, include_raw = false }: Params) {
-    if (!repoName) {
+  async branches(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
+    if (isEmpty(repoName)) {
       throw new Error('repoName is required to fetch branches.');
     }
 
@@ -186,6 +187,49 @@ export class Git extends Base {
         name: string;
         commit_sha: string;
         protected: boolean;
+      }>
+    >;
+  }
+  /**
+   * Fetch commits for a specific repository.
+   * @param repoName - The name of the repository.
+   * @param branch - Branch, tag or commit SHA to list commits from.
+   * @param limit - Maximum number of commits to retrieve.
+   * @param after - Cursor for pagination.
+   * @param include_raw - Whether to include raw response data.
+   * @returns A promise that resolves to the fetch response.
+   * @throws If repoName is not provided.
+   */
+  async commits(
+    repoName: string,
+    { branch, limit = 100, after, include_raw = false }: Params & { branch?: string } = {},
+  ) {
+    if (isEmpty(repoName)) {
+      throw new Error('repoName is required to fetch commits.');
+    }
+
+    const url = this.buildUrl(`repos/${encodeURIComponent(repoName)}/commits`, {
+      branch,
+      limit,
+      after,
+      include_raw,
+    });
+
+    const response = await fetch(url, { headers: this.headers });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${this.namespace}/repos/${repoName}/commits: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as Response<
+      Array<{
+        sha: string;
+        message: string | null;
+        url: string;
+        author: string | null;
+        author_email: string | null;
+        committed_at: string | null;
       }>
     >;
   }

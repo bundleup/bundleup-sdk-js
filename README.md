@@ -20,6 +20,7 @@ Official JavaScript/TypeScript SDK for the [BundleUp](https://bundleup.io) API. 
   - [Webhooks](#webhooks)
   - [Proxy API](#proxy-api)
   - [Unify API](#unify-api)
+  - [MCP API](#mcp-api)
 - [Error Handling](#error-handling)
 - [Development](#development)
 - [Contributing](#contributing)
@@ -76,6 +77,7 @@ globalThis.fetch = fetch;
 - 🔌 **100+ Integrations** - Connect to Slack, GitHub, Jira, Linear, and many more
 - 🎯 **Unified API** - Consistent interface across all integrations via Unify API
 - 🔑 **Proxy API** - Direct access to underlying integration APIs
+- 🤖 **MCP API** - Point any MCP client at a provider's server, scoped to one connection
 - 🪶 **Lightweight** - Zero dependencies beyond native fetch API
 - 🛡️ **Error Handling** - Comprehensive error messages and validation
 - 📚 **Well Documented** - Extensive documentation and examples
@@ -175,6 +177,10 @@ The **Proxy API** allows you to make direct HTTP requests to the underlying inte
 ### Unify API
 
 The **Unify API** provides a standardized, normalized interface across different integrations. For example, you can fetch chat channels from Slack, Discord, or Microsoft Teams using the same API call.
+
+### MCP API
+
+The **MCP API** reaches a provider's own MCP server using a connection's stored credentials. Tools are defined by the provider, not by BundleUp. Because the connection is chosen per client, one agent can serve many end users without ever handling a token.
 
 ## API Reference
 
@@ -1072,6 +1078,235 @@ console.log('Files:', result.data);
   }
 }
 ```
+
+### MCP API
+
+Reach a provider's own MCP server using a connection's credentials. BundleUp injects and refreshes the access token, so the connection ID is the only thing your agent needs to know about a user.
+
+Supported for providers that run a first-party MCP server — see the [integrations page](https://www.bundleup.io/integrations). Others return an `mcp_not_supported` error.
+
+`post` and `delete` are transport only, like the Proxy API — responses come back untouched. `connect()` layers a managed session on top when you would rather not drive the protocol yourself.
+
+#### Creating an MCP Client
+
+```javascript
+const mcp = client.mcp('conn_123abc');
+```
+
+#### Managed Sessions
+
+`connect()` returns a client that handles the handshake, session ID and response decoding, and exposes what the provider offers.
+
+```javascript
+const mcp = client.mcp('conn_123abc').connect();
+
+const tools = await mcp.tools();
+const result = await mcp.tool('create_issue', { title: 'Login broken' });
+
+await mcp.close();
+```
+
+Resources and prompts follow the same plural/singular shape:
+
+```javascript
+const resources = await mcp.resources();
+const contents = await mcp.resource('file:///readme.md');
+
+const prompts = await mcp.prompts();
+const messages = await mcp.prompt('summarize', { id: '123' });
+```
+
+Anything else in the protocol:
+
+```javascript
+await mcp.request('logging/setLevel', { level: 'debug' });
+```
+
+The handshake runs lazily on the first call and once per client, list methods follow `nextCursor` to the end, and `text/event-stream` responses are decoded for you. Errors throw with the provider's message, or BundleUp's with its code appended — `Missing or invalid connection ID (connection_invalid)`.
+
+Call `close()` when you are done to end the session upstream.
+
+#### Model-Hosted MCP
+
+OpenAI and Anthropic can connect to an MCP server themselves, with no tool mapping or dispatch loop on your side. Both accept only a single credential and no custom headers, so `hosted()` returns the server URL alongside the API key and connection joined into one bearer.
+
+```javascript
+const { url, token } = client.mcp('conn_123abc').hosted();
+
+const response = await openai.responses.create({
+  model: 'gpt-4o',
+  input: 'What issues are assigned to me?',
+  tools: [
+    {
+      type: 'mcp',
+      server_label: 'linear',
+      server_url: url,
+      authorization: token,
+      require_approval: 'never',
+    },
+  ],
+});
+```
+
+Anthropic's connector takes the same pair as `url` and `authorization_token`. `client.unify('conn_123abc').mcp.hosted()` returns them for Unified MCP.
+
+`server_url` must be exactly the URL `hosted()` returns — the proxy rebuilds the upstream URL from the provider's own base, so any path or query you append is ignored rather than rejected.
+
+This sends your API key to the model provider, whose servers make the request. Use an MCP client in your own backend if that is not acceptable.
+
+#### Using an MCP Client Library
+
+`transport()` returns the URL and headers if you would rather use an existing MCP client.
+
+```javascript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+const { url, headers } = client.mcp('conn_123abc').transport();
+
+const mcpClient = new Client({ name: 'my-agent', version: '1.0.0' });
+await mcpClient.connect(new StreamableHTTPClientTransport(new URL(url), { requestInit: { headers } }));
+
+const { tools } = await mcpClient.listTools();
+```
+
+#### Sending JSON-RPC Directly
+
+MCP requires an `initialize` handshake before any other method. The session ID comes back on that first response and must be sent on every call after it.
+
+```javascript
+const mcp = client.mcp('conn_123abc');
+
+// 1. Handshake
+const init = await mcp.post(
+  JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: {
+      protocolVersion: '2025-06-18',
+      capabilities: {},
+      clientInfo: { name: 'my-agent', version: '1.0.0' },
+    },
+  }),
+);
+
+const sessionId = init.headers.get('mcp-session-id');
+const session = sessionId ? { 'Mcp-Session-Id': sessionId } : {};
+
+// 2. Confirm the handshake (a notification — no id, no response body)
+await mcp.post(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }), session);
+
+// 3. List tools
+const response = await mcp.post(JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }), session);
+const { result } = await parse(response);
+
+console.log(result.tools);
+```
+
+Providers may answer with `text/event-stream` rather than JSON, so responses need unwrapping either way:
+
+```javascript
+async function parse(response) {
+  const text = await response.text();
+
+  if (!response.headers.get('content-type')?.includes('text/event-stream')) {
+    return JSON.parse(text);
+  }
+
+  const data = text
+    .split('\n')
+    .filter(line => line.startsWith('data:'))
+    .map(line => line.slice(5).trim())
+    .join('\n');
+
+  return JSON.parse(data);
+}
+```
+
+Tool lists can be paginated. If `result.nextCursor` is set, call `tools/list` again with `params: { cursor: result.nextCursor }` until it comes back empty.
+
+Calling a tool follows the same shape:
+
+```javascript
+const response = await mcp.post(
+  JSON.stringify({
+    jsonrpc: '2.0',
+    id: 3,
+    method: 'tools/call',
+    params: { name: 'create_issue', arguments: { title: 'Login broken' } },
+  }),
+  session,
+);
+```
+
+#### Sessions
+
+MCP sessions live on the provider's server — BundleUp holds no session state. Close one when you are done:
+
+```javascript
+await mcp.delete({ 'Mcp-Session-Id': sessionId });
+```
+
+#### Errors
+
+BundleUp rejects a request before it reaches the provider by returning an HTTP error with a JSON body — the response is passed straight through, so check `response.ok` yourself.
+
+```javascript
+const response = await mcp.post(body);
+
+if (!response.ok) {
+  const { code, message } = await response.json();
+  // connection_invalid, connection_refresh_failed, mcp_not_supported, rate_limit
+  console.error(code, message);
+}
+```
+
+Every JSON-RPC message counts toward the rate limit of 100 requests per 60 seconds, per connection — including the `initialize` handshake.
+
+#### Merging Several Connections
+
+An agent often needs more than one provider for the same end user. There is no merge helper in the SDK — how tools are namespaced, filtered and recovered from differs enough per agent that it is better written where you can see it:
+
+```javascript
+const clients = {
+  slack: client.mcp(user.slackConnection).connect(),
+  linear: client.mcp(user.linearConnection).connect(),
+  crm: client.unify(user.hubspotConnection).mcp,
+};
+
+// One namespaced list: slack__send_message, linear__create_issue, …
+const tools = (
+  await Promise.all(
+    Object.entries(clients).map(async ([label, mcp]) =>
+      (await mcp.tools()).map(tool => ({ ...tool, name: `${label}__${tool.name}` })),
+    ),
+  )
+).flat();
+
+// Route a call back to the client that owns it
+const call = (name, args) => {
+  const [label, ...rest] = name.split('__');
+  return clients[label].tool(rest.join('__'), args);
+};
+```
+
+Anything that exposes `tools()` and `tool(name, args)` fits the same shape, so an internal tool layer of your own can sit in that map alongside BundleUp connections.
+
+Two things worth handling that the sketch above skips. **Filter before you hand the list to a model** — three providers is easily sixty tools, and accuracy drops as that list grows, so select the ones the agent actually needs rather than passing everything. And decide what an unreachable provider should do: `Promise.all` fails the whole list, while `Promise.allSettled` lets the others through.
+
+#### Unified MCP
+
+BundleUp's normalized tools instead of the provider's, on the same protocol. Tools only — Unified MCP exposes no resources or prompts.
+
+```javascript
+const mcp = client.unify('conn_123abc').mcp;
+
+const tools = await mcp.tools();
+const result = await mcp.tool('send_message', { text: 'Deploy finished' });
+```
+
+`unify.mcp` is cached per `Unify` instance, so the handshake runs once no matter how often you read it. The server itself is stateless and POST-only, so there is no session to close.
 
 ## Error Handling
 
