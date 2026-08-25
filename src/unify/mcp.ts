@@ -32,18 +32,18 @@ export class MCP {
   /**
    * Get the list of available tools.
    */
-  public tools() {
-    return this.client.tools();
+  public listTools() {
+    return this.client.listTools();
   }
 
   /**
    * Call a specific tool with optional arguments.
    */
-  public tool(name: string, args?: Record<string, unknown>) {
+  public callTool(name: string, args?: Record<string, unknown>) {
     if (isEmpty(name)) {
       throw new Error('Tool name cannot be empty');
     }
 
-    return this.client.tool(name, args);
+    return this.client.callTool(name, args);
   }
 }

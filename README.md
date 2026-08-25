@@ -152,7 +152,7 @@ const client = new BundleUp(process.env.BUNDLEUP_API_KEY);
 **Example `.env` file:**
 
 ```bash
-BUNDLEUP_API_KEY=bu_live_1234567890abcdefghijklmnopqrstuvwxyz
+BUNDLEUP_API_KEY=Zw7Lt7JacsDyMCEpnZdGptgnJaOdMzFVH9QtIthnL5RviYP5WeH6e9FWP2HzEO
 ```
 
 **Loading environment variables:**
@@ -1100,8 +1100,8 @@ const mcp = client.mcp('conn_123abc');
 ```javascript
 const mcp = client.mcp('conn_123abc').connect();
 
-const tools = await mcp.tools();
-const result = await mcp.tool('create_issue', { title: 'Login broken' });
+const tools = await mcp.listTools();
+const result = await mcp.callTool('create_issue', { title: 'Login broken' });
 
 await mcp.close();
 ```
@@ -1109,11 +1109,11 @@ await mcp.close();
 Resources and prompts follow the same plural/singular shape:
 
 ```javascript
-const resources = await mcp.resources();
-const contents = await mcp.resource('file:///readme.md');
+const resources = await mcp.listResources();
+const contents = await mcp.readResource('file:///readme.md');
 
-const prompts = await mcp.prompts();
-const messages = await mcp.prompt('summarize', { id: '123' });
+const prompts = await mcp.listPrompts();
+const messages = await mcp.getPrompt('summarize', { id: '123' });
 ```
 
 Anything else in the protocol:
@@ -1279,7 +1279,7 @@ const clients = {
 const tools = (
   await Promise.all(
     Object.entries(clients).map(async ([label, mcp]) =>
-      (await mcp.tools()).map(tool => ({ ...tool, name: `${label}__${tool.name}` })),
+      (await mcp.listTools()).map(tool => ({ ...tool, name: `${label}__${tool.name}` })),
     ),
   )
 ).flat();
@@ -1287,7 +1287,7 @@ const tools = (
 // Route a call back to the client that owns it
 const call = (name, args) => {
   const [label, ...rest] = name.split('__');
-  return clients[label].tool(rest.join('__'), args);
+  return clients[label].callTool(rest.join('__'), args);
 };
 ```
 
@@ -1302,8 +1302,8 @@ BundleUp's normalized tools instead of the provider's, on the same protocol. Too
 ```javascript
 const mcp = client.unify('conn_123abc').mcp;
 
-const tools = await mcp.tools();
-const result = await mcp.tool('send_message', { text: 'Deploy finished' });
+const tools = await mcp.listTools();
+const result = await mcp.callTool('send_message', { text: 'Deploy finished' });
 ```
 
 `unify.mcp` is cached per `Unify` instance, so the handshake runs once no matter how often you read it. The server itself is stateless and POST-only, so there is no session to close.

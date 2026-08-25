@@ -207,7 +207,7 @@ export class MCPClient {
   /**
    * List the provider's tools, following pagination to the end.
    */
-  public tools(): Promise<Tool[]> {
+  public listTools(): Promise<Tool[]> {
     return this.paginate<Tool>('tools/list', 'tools');
   }
 
@@ -216,7 +216,7 @@ export class MCPClient {
    * @param name - The tool name, as returned by `tools()`.
    * @param args - Arguments matching the tool's own `inputSchema`.
    */
-  public async tool(name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  public async callTool(name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
     if (isEmpty(name)) {
       throw new Error('Tool name is required to call a tool.');
     }
@@ -233,7 +233,7 @@ export class MCPClient {
   /**
    * List the provider's resources, following pagination to the end.
    */
-  public resources(): Promise<Resource[]> {
+  public listResources(): Promise<Resource[]> {
     return this.paginate<Resource>('resources/list', 'resources');
   }
 
@@ -241,7 +241,7 @@ export class MCPClient {
    * Read a resource.
    * @param uri - The resource URI, as returned by `resources()`.
    */
-  public async resource(uri: string): Promise<Record<string, unknown>> {
+  public async readResource(uri: string): Promise<Record<string, unknown>> {
     if (isEmpty(uri)) {
       throw new Error('Resource URI is required to read a resource.');
     }
@@ -254,7 +254,7 @@ export class MCPClient {
   /**
    * List the provider's prompts, following pagination to the end.
    */
-  public prompts(): Promise<Prompt[]> {
+  public listPrompts(): Promise<Prompt[]> {
     return this.paginate<Prompt>('prompts/list', 'prompts');
   }
 
@@ -263,7 +263,7 @@ export class MCPClient {
    * @param name - The prompt name, as returned by `prompts()`.
    * @param args - Arguments the prompt declares.
    */
-  public async prompt(name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  public async getPrompt(name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
     if (isEmpty(name)) {
       throw new Error('Prompt name is required to get a prompt.');
     }

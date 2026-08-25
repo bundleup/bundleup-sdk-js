@@ -85,7 +85,7 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [TOOL] } }));
 
-      await client.tools();
+      await client.listTools();
 
       expect(mockFetch).toHaveBeenCalledTimes(3);
       expect(bodyOf(0).method).toBe('initialize');
@@ -99,8 +99,8 @@ describe('MCPClient', () => {
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [] } }));
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 3, result: { resources: [] } }));
 
-      await client.tools();
-      await client.resources();
+      await client.listTools();
+      await client.listResources();
 
       expect(mockFetch).toHaveBeenCalledTimes(4);
       expect(bodyOf(3).method).toBe('resources/list');
@@ -110,7 +110,7 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValue(response({ jsonrpc: '2.0', id: 2, result: { tools: [] } }));
 
-      await Promise.all([client.tools(), client.tools()]);
+      await Promise.all([client.listTools(), client.listTools()]);
 
       const handshakes = mockFetch.mock.calls.filter(call => JSON.parse(call[1].body).method === 'initialize');
 
@@ -121,7 +121,7 @@ describe('MCPClient', () => {
       mockHandshake('sess_abc');
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [] } }));
 
-      await client.tools();
+      await client.listTools();
 
       expect(headersOf(0)['Mcp-Session-Id']).toBeUndefined();
       expect(headersOf(2)['Mcp-Session-Id']).toBe('sess_abc');
@@ -131,12 +131,12 @@ describe('MCPClient', () => {
       mockFetch.mockResolvedValueOnce(
         response({ code: 'rate_limit', message: 'Too many requests' }, { ok: false, status: 429 }),
       );
-      await expect(client.tools()).rejects.toThrow('Too many requests (rate_limit)');
+      await expect(client.listTools()).rejects.toThrow('Too many requests (rate_limit)');
 
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 3, result: { tools: [TOOL] } }));
 
-      await expect(client.tools()).resolves.toEqual([TOOL]);
+      await expect(client.listTools()).resolves.toEqual([TOOL]);
     });
   });
 
@@ -145,7 +145,7 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [TOOL] } }));
 
-      await expect(client.tools()).resolves.toEqual([TOOL]);
+      await expect(client.listTools()).resolves.toEqual([TOOL]);
     });
 
     it('should follow nextCursor pagination', async () => {
@@ -157,7 +157,7 @@ describe('MCPClient', () => {
         response({ jsonrpc: '2.0', id: 3, result: { tools: [{ ...TOOL, name: 'list_issues' }] } }),
       );
 
-      const tools = await client.tools();
+      const tools = await client.listTools();
 
       expect(tools).toHaveLength(2);
       expect(bodyOf(3).params).toEqual({ cursor: 'page2' });
@@ -175,7 +175,7 @@ describe('MCPClient', () => {
         ),
       );
 
-      await expect(client.tools()).resolves.toEqual([TOOL]);
+      await expect(client.listTools()).resolves.toEqual([TOOL]);
     });
   });
 
@@ -186,7 +186,7 @@ describe('MCPClient', () => {
         response({ jsonrpc: '2.0', id: 2, result: { content: [{ type: 'text', text: 'done' }] } }),
       );
 
-      const result = await client.tool('create_issue', { title: 'Login broken' });
+      const result = await client.callTool('create_issue', { title: 'Login broken' });
 
       expect(bodyOf(2)).toEqual(
         expect.objectContaining({
@@ -198,7 +198,7 @@ describe('MCPClient', () => {
     });
 
     it('should require a tool name', async () => {
-      await expect(client.tool('')).rejects.toThrow('Tool name is required');
+      await expect(client.callTool('')).rejects.toThrow('Tool name is required');
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
@@ -208,7 +208,7 @@ describe('MCPClient', () => {
         response({ jsonrpc: '2.0', id: 2, error: { code: -32602, message: 'Unknown tool' } }),
       );
 
-      await expect(client.tool('nope')).rejects.toThrow('Unknown tool');
+      await expect(client.callTool('nope')).rejects.toThrow('Unknown tool');
     });
   });
 
@@ -219,7 +219,7 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { resources: [resource] } }));
 
-      await expect(client.resources()).resolves.toEqual([resource]);
+      await expect(client.listResources()).resolves.toEqual([resource]);
       expect(bodyOf(2).method).toBe('resources/list');
     });
 
@@ -227,7 +227,7 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { contents: [] } }));
 
-      await client.resource('file:///readme.md');
+      await client.readResource('file:///readme.md');
 
       expect(bodyOf(2)).toEqual(
         expect.objectContaining({ method: 'resources/read', params: { uri: 'file:///readme.md' } }),
@@ -235,7 +235,7 @@ describe('MCPClient', () => {
     });
 
     it('should require a URI', async () => {
-      await expect(client.resource('')).rejects.toThrow('Resource URI is required');
+      await expect(client.readResource('')).rejects.toThrow('Resource URI is required');
     });
   });
 
@@ -246,14 +246,14 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { prompts: [prompt] } }));
 
-      await expect(client.prompts()).resolves.toEqual([prompt]);
+      await expect(client.listPrompts()).resolves.toEqual([prompt]);
     });
 
     it('should get a prompt by name', async () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { messages: [] } }));
 
-      await client.prompt('summarize', { id: '123' });
+      await client.getPrompt('summarize', { id: '123' });
 
       expect(bodyOf(2)).toEqual(
         expect.objectContaining({ method: 'prompts/get', params: { name: 'summarize', arguments: { id: '123' } } }),
@@ -261,7 +261,7 @@ describe('MCPClient', () => {
     });
 
     it('should require a prompt name', async () => {
-      await expect(client.prompt('')).rejects.toThrow('Prompt name is required');
+      await expect(client.getPrompt('')).rejects.toThrow('Prompt name is required');
     });
   });
 
@@ -291,13 +291,13 @@ describe('MCPClient', () => {
         ),
       );
 
-      await expect(client.tools()).rejects.toThrow('Missing or invalid connection ID (connection_invalid)');
+      await expect(client.listTools()).rejects.toThrow('Missing or invalid connection ID (connection_invalid)');
     });
 
     it('should fall back to the status when the body is not JSON', async () => {
       mockFetch.mockResolvedValueOnce(response('gateway timeout', { ok: false, status: 504 }));
 
-      await expect(client.tools()).rejects.toThrow('MCP request failed with status 504.');
+      await expect(client.listTools()).rejects.toThrow('MCP request failed with status 504.');
     });
   });
 
@@ -306,7 +306,7 @@ describe('MCPClient', () => {
       mockHandshake('sess_xyz');
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [] } }));
 
-      await client.tools();
+      await client.listTools();
 
       mockFetch.mockResolvedValueOnce(response());
       await client.close();
@@ -323,14 +323,14 @@ describe('MCPClient', () => {
     it('should handshake again after close', async () => {
       mockHandshake('sess_1');
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [] } }));
-      await client.tools();
+      await client.listTools();
 
       mockFetch.mockResolvedValueOnce(response());
       await client.close();
 
       mockHandshake('sess_2');
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 4, result: { tools: [TOOL] } }));
-      await expect(client.tools()).resolves.toEqual([TOOL]);
+      await expect(client.listTools()).resolves.toEqual([TOOL]);
     });
   });
 
@@ -343,7 +343,7 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [TOOL] } }));
 
-      await expect(unified.tools()).resolves.toEqual([TOOL]);
+      await expect(unified.listTools()).resolves.toEqual([TOOL]);
       expect(mockFetch.mock.calls.every(call => call[0] === unifiedURL)).toBe(true);
     });
 
@@ -353,7 +353,7 @@ describe('MCPClient', () => {
       mockHandshake();
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { content: [] } }));
 
-      await unified.tool('send_message', { text: 'hi' });
+      await unified.callTool('send_message', { text: 'hi' });
 
       expect(bodyOf(2)).toEqual(
         expect.objectContaining({
@@ -370,8 +370,8 @@ describe('MCPClient', () => {
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [] } }));
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 3, result: { content: [] } }));
 
-      await unified.tools();
-      await unified.tool('send_message');
+      await unified.listTools();
+      await unified.callTool('send_message');
 
       const handshakes = mockFetch.mock.calls.filter(call => JSON.parse(call[1].body).method === 'initialize');
 
@@ -381,7 +381,7 @@ describe('MCPClient', () => {
     it('should require a tool name', () => {
       const unified = new UnifiedMCP(apiKey, connectionId);
 
-      expect(() => unified.tool('')).toThrow('Tool name cannot be empty');
+      expect(() => unified.callTool('')).toThrow('Tool name cannot be empty');
     });
   });
 
@@ -399,8 +399,8 @@ describe('MCPClient', () => {
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 2, result: { tools: [] } }));
       mockFetch.mockResolvedValueOnce(response({ jsonrpc: '2.0', id: 3, result: { content: [] } }));
 
-      await unify.mcp.tools();
-      await unify.mcp.tool('send_message');
+      await unify.mcp.listTools();
+      await unify.mcp.callTool('send_message');
 
       const handshakes = mockFetch.mock.calls.filter(call => JSON.parse(call[1].body).method === 'initialize');
 
