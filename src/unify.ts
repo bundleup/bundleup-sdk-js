@@ -3,6 +3,7 @@ import { Git } from './unify/git';
 import { Ticketing } from './unify/ticketing';
 import { CRM } from './unify/crm';
 import { Drive } from './unify/drive';
+import { Calendar } from './unify/calendar';
 import { MCP } from './unify/mcp';
 import { Me, type MeParams } from './unify/me';
 
@@ -47,6 +48,13 @@ export class Unify {
    */
   get drive() {
     return new Drive(this.apiKey, this.connectionId);
+  }
+
+  /**
+   * Access the Calendar API for the connection.
+   */
+  get calendar() {
+    return new Calendar(this.apiKey, this.connectionId);
   }
 
   /**

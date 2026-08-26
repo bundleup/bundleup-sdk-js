@@ -26,6 +26,13 @@ try {
 try {
   const channels = await unify.chat.channels({ limit: 10 });
   console.log(`Chat channels: ${channels.data?.length ?? 0}`);
+
+  const [channel] = channels.data ?? [];
+
+  if (channel) {
+    const messages = await unify.chat.messages(channel.id, { limit: 10 });
+    console.log(`Messages in ${channel.name}: ${messages.data?.length ?? 0}`);
+  }
 } catch (error) {
   console.error(`Failed to fetch chat channels: ${error.message}`);
 }
@@ -40,6 +47,13 @@ try {
 try {
   const tickets = await unify.ticketing.tickets({ limit: 10 });
   console.log(`Ticketing tickets: ${tickets.data?.length ?? 0}`);
+
+  const [first] = tickets.data ?? [];
+
+  if (first) {
+    const ticket = await unify.ticketing.ticket(first.id);
+    console.log(`Ticket ${ticket.data.id}: ${ticket.data.title}`);
+  }
 } catch (error) {
   console.error(`Failed to fetch tickets: ${error.message}`);
 }
@@ -56,4 +70,15 @@ try {
   console.log(`Drive files: ${files.data?.length ?? 0}`);
 } catch (error) {
   console.error(`Failed to fetch Drive files: ${error.message}`);
+}
+
+try {
+  const events = await unify.calendar.events({
+    starts_after: new Date().toISOString(),
+    starts_before: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    limit: 10,
+  });
+  console.log(`Calendar events: ${events.data?.length ?? 0}`);
+} catch (error) {
+  console.error(`Failed to fetch Calendar events: ${error.message}`);
 }

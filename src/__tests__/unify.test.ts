@@ -2,6 +2,7 @@ import { Unify } from '../unify';
 import { Chat } from '../unify/chat';
 import { Git } from '../unify/git';
 import { Ticketing } from '../unify/ticketing';
+import { Calendar } from '../unify/calendar';
 import { CRM } from '../unify/crm';
 import { Drive } from '../unify/drive';
 import { Me } from '../unify/me';
@@ -123,6 +124,26 @@ describe('Unify', () => {
       // Access protected properties for testing
       expect((drive as any).apiKey).toBe(apiKey);
       expect((drive as any).connectionId).toBe(connectionId);
+    });
+  });
+
+  describe('calendar getter', () => {
+    it('should return a Calendar instance', () => {
+      const calendar = unify.calendar;
+      expect(calendar).toBeInstanceOf(Calendar);
+    });
+
+    it('should create a new Calendar instance each time', () => {
+      const calendar1 = unify.calendar;
+      const calendar2 = unify.calendar;
+      expect(calendar1).not.toBe(calendar2);
+    });
+
+    it('should initialize Calendar with correct apiKey and connectionId', () => {
+      const calendar = unify.calendar;
+      // Access protected properties for testing
+      expect((calendar as any).apiKey).toBe(apiKey);
+      expect((calendar as any).connectionId).toBe(connectionId);
     });
   });
 

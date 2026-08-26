@@ -1,3 +1,4 @@
+import { isEmpty } from '../utils/helpers';
 import { Base, type Params, type Response } from './base';
 
 export class Ticketing extends Base {
@@ -31,5 +32,46 @@ export class Ticketing extends Base {
         updated_at: string;
       }>
     >;
+  }
+
+  /**
+   * Fetch a single ticket by ID.
+   *
+   * Not supported by Basecamp, whose API only serves a to-do underneath its
+   * project — an id on its own cannot address one.
+   *
+   * @param id - The ID of the ticket.
+   * @param include_raw - Whether to include raw response data.
+   * @returns A promise that resolves to the fetch response.
+   * @throws If id is not provided.
+   */
+  async ticket(id: string, { include_raw = false }: Params = {}) {
+    if (isEmpty(id)) {
+      throw new Error('id is required to fetch a ticket.');
+    }
+
+    const url = this.buildUrl(`tickets/${encodeURIComponent(id)}`, { include_raw });
+
+    const response = await fetch(url, { headers: this.headers });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${this.namespace}/tickets/${id}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // A single resource carries no pagination, so this is not `Response<T>`.
+    return data as {
+      data: {
+        id: string;
+        url: string | null;
+        title: string;
+        status: string | null;
+        description: string | null;
+        created_at: string | null;
+        updated_at: string | null;
+      };
+      _raw?: unknown;
+    };
   }
 }

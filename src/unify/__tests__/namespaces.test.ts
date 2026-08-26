@@ -1,4 +1,5 @@
 import { Base } from '../base';
+import { Calendar } from '../calendar';
 import { Chat } from '../chat';
 import { CRM } from '../crm';
 import { Drive } from '../drive';
@@ -158,6 +159,48 @@ describe('Chat', () => {
       );
     });
   });
+
+  describe('messages', () => {
+    it('should fetch messages for a channel', async () => {
+      mockFetch.mockResolvedValueOnce(ok());
+
+      await chat.messages('C123');
+
+      expect(callUrl()).toContain('chat/channels/C123/messages');
+    });
+
+    it('should pass through paging options', async () => {
+      mockFetch.mockResolvedValueOnce(ok());
+
+      await chat.messages('C123', { limit: 20, after: 'cursor_1' });
+
+      const url = new URL(callUrl());
+
+      expect(url.searchParams.get('limit')).toBe('20');
+      expect(url.searchParams.get('after')).toBe('cursor_1');
+    });
+
+    it('should encode a channel ID with URL-unsafe characters', async () => {
+      mockFetch.mockResolvedValueOnce(ok());
+
+      await chat.messages('team/general');
+
+      expect(callUrl()).toContain('chat/channels/team%2Fgeneral/messages');
+    });
+
+    it('should reject an empty channel ID', async () => {
+      await expect(chat.messages('')).rejects.toThrow('channelId is required to fetch messages.');
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should throw on failure', async () => {
+      mockFetch.mockResolvedValueOnce(failed('Not Found', 404));
+
+      await expect(chat.messages('C123')).rejects.toThrow(
+        'Failed to fetch chat/channels/C123/messages: Not Found',
+      );
+    });
+  });
 });
 
 describe('CRM', () => {
@@ -198,6 +241,49 @@ describe('Drive', () => {
   });
 });
 
+describe('Calendar', () => {
+  const window = { starts_after: '2026-09-01T00:00:00Z', starts_before: '2026-09-08T00:00:00Z' };
+
+  it('should fetch events', async () => {
+    mockFetch.mockResolvedValueOnce(ok());
+
+    await new Calendar(apiKey, connectionId).events(window);
+
+    expect(callUrl()).toContain('calendar/events');
+  });
+
+  it('should pass through the window', async () => {
+    mockFetch.mockResolvedValueOnce(ok());
+
+    await new Calendar(apiKey, connectionId).events(window);
+
+    const url = new URL(callUrl());
+
+    expect(url.searchParams.get('starts_after')).toBe(window.starts_after);
+    expect(url.searchParams.get('starts_before')).toBe(window.starts_before);
+  });
+
+  it.each([
+    ['starts_after', { starts_before: window.starts_before }],
+    ['starts_before', { starts_after: window.starts_after }],
+    ['both bounds', {}],
+  ])('should throw when %s is missing', async (_label, params) => {
+    await expect(new Calendar(apiKey, connectionId).events(params as never)).rejects.toThrow(
+      'starts_after and starts_before are required to fetch events.',
+    );
+
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should throw on failure', async () => {
+    mockFetch.mockResolvedValueOnce(failed());
+
+    await expect(new Calendar(apiKey, connectionId).events(window)).rejects.toThrow(
+      'Failed to fetch calendar/events: Bad Gateway',
+    );
+  });
+});
+
 describe('Ticketing', () => {
   it('should fetch tickets', async () => {
     mockFetch.mockResolvedValueOnce(ok());
@@ -212,6 +298,38 @@ describe('Ticketing', () => {
 
     await expect(new Ticketing(apiKey, connectionId).tickets()).rejects.toThrow(
       'Failed to fetch ticketing/tickets: Bad Gateway',
+    );
+  });
+
+  it('should fetch a single ticket', async () => {
+    mockFetch.mockResolvedValueOnce(ok({ data: { id: 'TKT-1' } }));
+
+    await new Ticketing(apiKey, connectionId).ticket('TKT-1');
+
+    expect(callUrl()).toContain('ticketing/tickets/TKT-1');
+  });
+
+  it('should encode the ticket id', async () => {
+    mockFetch.mockResolvedValueOnce(ok({ data: { id: 'a/b' } }));
+
+    await new Ticketing(apiKey, connectionId).ticket('a/b');
+
+    expect(callUrl()).toContain('ticketing/tickets/a%2Fb');
+  });
+
+  it('should throw without an id', async () => {
+    await expect(new Ticketing(apiKey, connectionId).ticket('')).rejects.toThrow(
+      'id is required to fetch a ticket.',
+    );
+
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should throw when a single ticket fails', async () => {
+    mockFetch.mockResolvedValueOnce(failed('Not Found', 404));
+
+    await expect(new Ticketing(apiKey, connectionId).ticket('TKT-1')).rejects.toThrow(
+      'Failed to fetch ticketing/tickets/TKT-1: Not Found',
     );
   });
 });

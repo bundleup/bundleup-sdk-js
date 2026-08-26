@@ -88,7 +88,7 @@ Runnable examples are available in the [`examples/`](./examples) directory:
 
 - [`examples/basic_usage.js`](./examples/basic_usage.js) - Client setup, connections, integrations, and webhooks
 - [`examples/proxy_api.js`](./examples/proxy_api.js) - Proxy API GET request with a connection
-- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, Ticketing, CRM, and Drive endpoint usage
+- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, Ticketing, CRM, Drive, and Calendar endpoint usage
 - [`examples/README.md`](./examples/README.md) - Setup and execution instructions
 
 ## Quick Start
@@ -739,6 +739,39 @@ do {
 console.log(`Fetched ${allChannels.length} total channels`);
 ```
 
+##### List Messages
+
+Messages in one channel, newest first. `author.name` is null on Slack, which returns only a user id on a message.
+
+```javascript
+const result = await unify.chat.messages('C123', {
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Messages:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: '1755712345.123456',
+      text: 'Deploy finished',
+      author: { id: 'U024BE7LH', name: null },
+      created_at: '2026-08-20T18:32:25.123Z',
+      thread_id: null
+    }
+  ],
+  metadata: {
+    next: 'cursor_def456'
+  }
+}
+```
+
 ##### Send Message
 
 Send a message to a channel on the connected chat platform.
@@ -979,6 +1012,34 @@ const openTickets = result.data.filter(ticket => ticket.status === 'open');
 const sortedByDate = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 ```
 
+##### Get a Ticket
+
+Fetch one ticket by ID. Not supported by Basecamp, whose API only serves a to-do underneath its project.
+
+```javascript
+const result = await unify.ticketing.ticket('PROJ-123');
+
+console.log('Ticket:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: {
+    id: 'PROJ-123',
+    url: 'https://jira.example.com/browse/PROJ-123',
+    title: 'Fix login bug',
+    status: 'in_progress',
+    description: 'Users are unable to log in',
+    created_at: '2024-01-15T10:30:00Z',
+    updated_at: '2024-01-20T14:22:00Z'
+  }
+}
+```
+
+A single resource carries no pagination, so there is no `metadata` on this response.
+
 #### CRM API
 
 The CRM API provides a unified interface for CRM platforms like Attio, HubSpot, PipeDrive, Salesforce and Zoho.
@@ -1078,6 +1139,49 @@ console.log('Files:', result.data);
   }
 }
 ```
+
+#### Calendar API
+
+The Calendar API provides a unified interface for calendar and scheduling platforms like Google Calendar, Outlook, Calendly and Zoom.
+
+##### List Events
+
+`starts_after` and `starts_before` are required — the endpoint refuses an unbounded listing.
+
+```javascript
+const result = await unify.calendar.events({
+  starts_after: '2026-09-01T00:00:00Z',
+  starts_before: '2026-09-08T00:00:00Z',
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Events:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: 'evt_123',
+      title: 'Design review',
+      description: 'Walk through the new onboarding flow',
+      start_date: '2026-09-01T15:00:00Z',
+      end_date: '2026-09-01T16:00:00Z',
+      status: 'confirmed',
+      url: 'https://calendar.google.com/event?eid=...'
+    }
+  ],
+  metadata: {
+    next: null
+  }
+}
+```
+
+Recurring events are expanded into their occurrences. All-day events carry a `YYYY-MM-DD` date rather than a timestamp. Attendees, conferencing links and organizers are available through `include_raw` or the Proxy API.
 
 ### MCP API
 
@@ -1376,7 +1480,8 @@ src/
 │   ├── git.ts           # Git Unify API
 │   ├── ticketing.ts     # Ticketing Unify API
 │   ├── crm.ts           # CRM Unify API
-│   └── drive.ts         # Drive Unify API
+│   ├── drive.ts         # Drive Unify API
+│   └── calendar.ts      # Calendar Unify API
 └── __tests__/           # Test files
 ```
 
