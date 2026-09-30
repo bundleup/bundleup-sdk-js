@@ -80,6 +80,49 @@ export class Git extends Base {
   }
 
   /**
+   * Fetch issues for a specific repository.
+   * @param repoName - The name of the repository.
+   * @param limit - Maximum number of issues to retrieve.
+   * @param after - Cursor for pagination.
+   * @param include_raw - Whether to include raw response data.
+   * @returns A promise that resolves to the fetch response.
+   * @throws If repoName is not provided.
+   */
+  async issues(repoName: string, { limit = 100, after, include_raw = false }: Params = {}) {
+    if (isEmpty(repoName)) {
+      throw new Error('repoName is required to fetch issues.');
+    }
+
+    const url = this.buildUrl(`repos/${encodeURIComponent(repoName)}/issues`, {
+      limit,
+      after,
+      include_raw,
+    });
+
+    const response = await fetch(url, { headers: this.headers });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${this.namespace}/repos/${repoName}/issues: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as Response<
+      Array<{
+        id: number;
+        number: number;
+        title: string;
+        description: string | null;
+        state: string;
+        url: string;
+        user: string | null;
+        created_at: string;
+        updated_at: string;
+        closed_at: string | null;
+      }>
+    >;
+  }
+
+  /**
    * Fetch tags for a specific repository.
    * @param repoName - The name of the repository.
    * @param limit - Maximum number of tags to retrieve.

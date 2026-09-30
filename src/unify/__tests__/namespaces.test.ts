@@ -301,6 +301,26 @@ describe('Ticketing', () => {
     );
   });
 
+  it('should fetch projects', async () => {
+    mockFetch.mockResolvedValueOnce(ok());
+
+    await new Ticketing(apiKey, connectionId).projects({ limit: 5, after: 'cursor_1' });
+
+    const url = new URL(callUrl());
+
+    expect(url.pathname).toContain('ticketing/projects');
+    expect(url.searchParams.get('limit')).toBe('5');
+    expect(url.searchParams.get('after')).toBe('cursor_1');
+  });
+
+  it('should throw when projects fails', async () => {
+    mockFetch.mockResolvedValueOnce(failed());
+
+    await expect(new Ticketing(apiKey, connectionId).projects()).rejects.toThrow(
+      'Failed to fetch ticketing/projects: Bad Gateway',
+    );
+  });
+
   it('should fetch a single ticket', async () => {
     mockFetch.mockResolvedValueOnce(ok({ data: { id: 'TKT-1' } }));
 
@@ -355,7 +375,7 @@ describe('Git', () => {
     await expect(git.repos()).rejects.toThrow('Failed to fetch git/repos: Bad Gateway');
   });
 
-  const scoped = ['pulls', 'tags', 'releases', 'branches', 'commits'] as const;
+  const scoped = ['pulls', 'issues', 'tags', 'releases', 'branches', 'commits'] as const;
 
   it.each(scoped)('should fetch %s for a repo', async method => {
     mockFetch.mockResolvedValueOnce(ok());

@@ -1,3 +1,4 @@
+import { Auth } from './auth';
 import { MCP } from './mcp';
 import { Proxy } from './proxy';
 import { Unify } from './unify';
@@ -17,6 +18,13 @@ export class BundleUp {
     }
 
     this.apiKey = apiKey;
+  }
+
+  /**
+   * Access the Auth API for OAuth flows.
+   */
+  get auth() {
+    return new Auth(this.apiKey);
   }
 
   /**

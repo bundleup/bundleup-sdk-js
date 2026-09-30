@@ -77,6 +77,7 @@ globalThis.fetch = fetch;
 - 🔌 **100+ Integrations** - Connect to Slack, GitHub, Jira, Linear, and many more
 - 🎯 **Unified API** - Consistent interface across all integrations via Unify API
 - 🔑 **Proxy API** - Direct access to underlying integration APIs
+- 🤖 **MCP** - Connect agents to a provider's own MCP server or to BundleUp's Unified MCP
 - 🤖 **MCP API** - Point any MCP client at a provider's server, scoped to one connection
 - 🪶 **Lightweight** - Zero dependencies beyond native fetch API
 - 🛡️ **Error Handling** - Comprehensive error messages and validation
@@ -165,6 +166,10 @@ const client = new BundleUp(process.env.BUNDLEUP_API_KEY);
 ```
 
 ## Core Concepts
+
+### Auth API
+
+The **Auth API** runs the hosted authorization flow: build the URL that sends a user to connect an integration, then exchange the one-time `code` from the redirect for a `connection_id`. See [Authorization Flow](https://docs.bundleup.io/authorization-flow).
 
 ### Platform API
 
@@ -500,6 +505,62 @@ app.post('/webhook', (req, res) => {
   res.status(200).send('OK');
 });
 ```
+
+### Auth API
+
+Connect an end user's account and get back a `connection_id`. See [Authorization Flow](https://docs.bundleup.io/authorization-flow) for the full flow.
+
+#### Build the Authorization URL
+
+```javascript
+const url = client.auth.buildAuthorizationUrl({
+  clientId: 'your-client-id',
+  integrationId: 'github',
+  redirectUri: 'https://app.example.com/callback',
+  externalId: 'user_42', // optional
+  state: 'random-csrf-token', // optional
+});
+
+// Redirect the user to `url`
+```
+
+**Parameters:**
+
+- `clientId` (string, required): Your workspace client ID
+- `integrationId` (string, required): The integration to connect
+- `redirectUri` (string, required): Must exactly match a redirect URI registered in your dashboard
+- `externalId` (string, optional): Your own reference, stored on the connection
+- `state` (string, optional): Returned unchanged on the redirect
+
+#### Exchange the Code for a Connection
+
+BundleUp redirects back to `redirectUri` with a one-time `code`. Exchange it server-side:
+
+```javascript
+const connection = await client.auth.getConnectionFromCode({
+  code: req.query.code,
+  redirectUri: 'https://app.example.com/callback',
+});
+
+console.log(connection.connection_id);
+```
+
+**Parameters:**
+
+- `code` (string, required): The `code` query parameter from the redirect
+- `redirectUri` (string, required): The same redirect URI used to build the authorization URL
+
+**Response:**
+
+```javascript
+{
+  connection_id: 'conn_abc123',
+  external_id: 'user_42',
+  integration_id: 'github'
+}
+```
+
+The code expires after 5 minutes and can only be exchanged once. An invalid, expired or reused code throws an error that includes the API's error body.
 
 ### Proxy API
 
@@ -879,6 +940,49 @@ console.log('Pull Requests:', result.data);
 }
 ```
 
+##### List Issues
+
+```javascript
+const result = await unify.git.issues('organization/repo-name', {
+  limit: 20,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Issues:', result.data);
+```
+
+**Parameters:**
+
+- `repoName` (string, required): Repository name in the format 'owner/repo'
+- `limit` (number, optional): Maximum number of issues to return
+- `after` (string, optional): Pagination cursor
+- `include_raw` (boolean, optional): Include raw API response
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: 67890,
+      number: 17,
+      title: 'Timestamps drift on retry',
+      description: 'Retried requests report the first attempt time',
+      state: 'open',
+      url: 'https://github.com/org/repo/issues/17',
+      user: 'john-doe',
+      created_at: '2024-01-15T10:30:00Z',
+      updated_at: '2024-01-20T14:22:00Z',
+      closed_at: null
+    }
+  ],
+  metadata: {
+    next: null
+  }
+}
+```
+
 ##### List Tags
 
 ```javascript
@@ -968,6 +1072,40 @@ console.log('Branches:', result.data);
 }
 ```
 
+##### List Commits
+
+```javascript
+const result = await unify.git.commits('organization/repo-name', {
+  branch: 'main',
+  limit: 20,
+});
+
+console.log('Commits:', result.data);
+```
+
+`branch` is optional and accepts a branch name, tag or commit SHA. When it is omitted the
+provider's default branch is used.
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      sha: 'abc123def4567890abc123def4567890abc123de',
+      message: 'Add commits endpoint',
+      url: 'https://github.com/org/repo/commit/abc123def4567890abc123def4567890abc123de',
+      author: 'Jane Doe',
+      author_email: 'jane@example.com',
+      committed_at: '2024-01-15T10:30:00Z'
+    }
+  ],
+  metadata: {
+    next: null
+  }
+}
+```
+
 #### Ticketing API
 
 The Ticketing API provides a unified interface for ticketing and project management platforms like Jira, Linear, and Asana.
@@ -1039,6 +1177,41 @@ console.log('Ticket:', result.data);
 ```
 
 A single resource carries no pagination, so there is no `metadata` on this response.
+
+##### List Projects
+
+```javascript
+const result = await unify.ticketing.projects({
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Projects:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: '10001',
+      name: 'Website Redesign',
+      status: 'active',
+      url: 'https://jira.example.com/browse/PROJ',
+      description: 'All the work for the new marketing site',
+      created_at: '2024-01-15T10:30:00Z',
+      updated_at: '2024-01-20T14:22:00Z'
+    }
+  ],
+  metadata: {
+    next: 'cursor_def456'
+  }
+}
+```
+
+**Note:** Not every platform returns every field. Jira does not expose creation or update timestamps for projects, so `created_at` and `updated_at` are `null` for Jira connections, and `status` is only set when Jira reports whether the project is archived.
 
 #### CRM API
 
@@ -1395,7 +1568,7 @@ const call = (name, args) => {
 };
 ```
 
-Anything that exposes `tools()` and `tool(name, args)` fits the same shape, so an internal tool layer of your own can sit in that map alongside BundleUp connections.
+Anything that exposes `listTools()` and `callTool(name, args)` fits the same shape, so an internal tool layer of your own can sit in that map alongside BundleUp connections.
 
 Two things worth handling that the sketch above skips. **Filter before you hand the list to a model** — three providers is easily sixty tools, and accuracy drops as that list grows, so select the ones the agent actually needs rather than passing everything. And decide what an unreachable provider should do: `Promise.all` fails the whole list, while `Promise.allSettled` lets the others through.
 
@@ -1466,7 +1639,9 @@ npm run dev
 ```
 src/
 ├── index.ts              # Main entry point
+├── auth.ts               # Auth API (authorization URL + code exchange)
 ├── proxy.ts              # Proxy API implementation
+├── mcp.ts                # MCP API (transport + managed sessions)
 ├── unify.ts              # Unify API implementation
 ├── utils.ts              # Utility functions
 ├── resources/
