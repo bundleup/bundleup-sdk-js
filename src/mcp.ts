@@ -1,6 +1,13 @@
-import { MCPClient } from './utils/mcp';
 import { isObject } from './utils/helpers';
 
+/**
+ * A connection's MCP server.
+ *
+ * BundleUp does not ship an MCP client. Hand `transport()` or `hosted()` to the
+ * client you already use — the official MCP SDK, OpenAI Agents SDK, Vercel AI
+ * SDK, LangChain — or drive the protocol yourself with `post` and `delete`,
+ * which return the raw response the way the Proxy API does.
+ */
 export class MCP {
   protected baseUrl = 'https://mcp.bundleup.io';
 
@@ -21,7 +28,7 @@ export class MCP {
   /**
    * The URL and headers for this connection's MCP server.
    *
-   * Hand these to an MCP client to let it drive the connection:
+   * For an MCP client running in your own backend:
    *
    * ```ts
    * const { url, headers } = client.mcp('conn_123').transport();
@@ -90,16 +97,5 @@ export class MCP {
       method: 'DELETE',
       headers: { ...this.headers, ...headers },
     });
-  }
-
-  /**
-   * Open a managed MCP session for this connection.
-   *
-   * Handles the handshake, session ID and response decoding, and exposes the
-   * provider's tools, resources and prompts. Use `post` above instead if you
-   * want to drive the protocol yourself.
-   */
-  connect() {
-    return new MCPClient(this.baseUrl, this.apiKey, this.connectionId);
   }
 }

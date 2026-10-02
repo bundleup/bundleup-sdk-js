@@ -77,7 +77,7 @@ globalThis.fetch = fetch;
 - 🔌 **100+ Integrations** - Connect to Slack, GitHub, Jira, Linear, and many more
 - 🎯 **Unified API** - Consistent interface across all integrations via Unify API
 - 🔑 **Proxy API** - Direct access to underlying integration APIs
-- 🤖 **MCP** - Connect agents to a provider's own MCP server or to BundleUp's Unified MCP
+- 🤖 **MCP** - Hand a connection to any MCP client, or to OpenAI and Anthropic's hosted MCP
 - 🤖 **MCP API** - Point any MCP client at a provider's server, scoped to one connection
 - 🪶 **Lightweight** - Zero dependencies beyond native fetch API
 - 🛡️ **Error Handling** - Comprehensive error messages and validation
@@ -1362,46 +1362,13 @@ Reach a provider's own MCP server using a connection's credentials. BundleUp inj
 
 Supported for providers that run a first-party MCP server — see the [integrations page](https://www.bundleup.io/integrations). Others return an `mcp_not_supported` error.
 
-`post` and `delete` are transport only, like the Proxy API — responses come back untouched. `connect()` layers a managed session on top when you would rather not drive the protocol yourself.
+BundleUp does not ship an MCP client. Hand `hosted()` or `transport()` to the one you already use, or send JSON-RPC yourself with `post` and `delete`, which return the response untouched, like the Proxy API.
 
-#### Creating an MCP Client
+#### Creating an MCP Instance
 
 ```javascript
 const mcp = client.mcp('conn_123abc');
 ```
-
-#### Managed Sessions
-
-`connect()` returns a client that handles the handshake, session ID and response decoding, and exposes what the provider offers.
-
-```javascript
-const mcp = client.mcp('conn_123abc').connect();
-
-const tools = await mcp.listTools();
-const result = await mcp.callTool('create_issue', { title: 'Login broken' });
-
-await mcp.close();
-```
-
-Resources and prompts follow the same plural/singular shape:
-
-```javascript
-const resources = await mcp.listResources();
-const contents = await mcp.readResource('file:///readme.md');
-
-const prompts = await mcp.listPrompts();
-const messages = await mcp.getPrompt('summarize', { id: '123' });
-```
-
-Anything else in the protocol:
-
-```javascript
-await mcp.request('logging/setLevel', { level: 'debug' });
-```
-
-The handshake runs lazily on the first call and once per client, list methods follow `nextCursor` to the end, and `text/event-stream` responses are decoded for you. Errors throw with the provider's message, or BundleUp's with its code appended — `Missing or invalid connection ID (connection_invalid)`.
-
-Call `close()` when you are done to end the session upstream.
 
 #### Model-Hosted MCP
 
@@ -1425,7 +1392,7 @@ const response = await openai.responses.create({
 });
 ```
 
-Anthropic's connector takes the same pair as `url` and `authorization_token`. `client.unify('conn_123abc').mcp.hosted()` returns them for Unified MCP.
+Anthropic's connector takes the same pair as `url` and `authorization_token`.
 
 `server_url` must be exactly the URL `hosted()` returns — the proxy rebuilds the upstream URL from the provider's own base, so any path or query you append is ignored rather than rejected.
 
@@ -1541,49 +1508,24 @@ if (!response.ok) {
 
 Every JSON-RPC message counts toward the rate limit of 100 requests per 60 seconds, per connection — including the `initialize` handshake.
 
-#### Merging Several Connections
+#### Several Connections
 
-An agent often needs more than one provider for the same end user. There is no merge helper in the SDK — how tools are namespaced, filtered and recovered from differs enough per agent that it is better written where you can see it:
-
-```javascript
-const clients = {
-  slack: client.mcp(user.slackConnection).connect(),
-  linear: client.mcp(user.linearConnection).connect(),
-  crm: client.unify(user.hubspotConnection).mcp,
-};
-
-// One namespaced list: slack__send_message, linear__create_issue, …
-const tools = (
-  await Promise.all(
-    Object.entries(clients).map(async ([label, mcp]) =>
-      (await mcp.listTools()).map(tool => ({ ...tool, name: `${label}__${tool.name}` })),
-    ),
-  )
-).flat();
-
-// Route a call back to the client that owns it
-const call = (name, args) => {
-  const [label, ...rest] = name.split('__');
-  return clients[label].callTool(rest.join('__'), args);
-};
-```
-
-Anything that exposes `listTools()` and `callTool(name, args)` fits the same shape, so an internal tool layer of your own can sit in that map alongside BundleUp connections.
-
-Two things worth handling that the sketch above skips. **Filter before you hand the list to a model** — three providers is easily sixty tools, and accuracy drops as that list grows, so select the ones the agent actually needs rather than passing everything. And decide what an unreachable provider should do: `Promise.all` fails the whole list, while `Promise.allSettled` lets the others through.
-
-#### Unified MCP
-
-BundleUp's normalized tools instead of the provider's, on the same protocol. Tools only — Unified MCP exposes no resources or prompts.
+An agent often needs more than one provider for the same end user. With model-hosted MCP there is nothing to merge — pass one `mcp` tool per connection and the model provider keeps them apart by `server_label`:
 
 ```javascript
-const mcp = client.unify('conn_123abc').mcp;
+const tools = Object.entries({
+  slack: user.slackConnection,
+  linear: user.linearConnection,
+}).map(([label, connectionId]) => {
+  const { url, token } = client.mcp(connectionId).hosted();
 
-const tools = await mcp.listTools();
-const result = await mcp.callTool('send_message', { text: 'Deploy finished' });
+  return { type: 'mcp', server_label: label, server_url: url, authorization: token, require_approval: 'never' };
+});
 ```
 
-`unify.mcp` is cached per `Unify` instance, so the handshake runs once no matter how often you read it. The server itself is stateless and POST-only, so there is no session to close.
+With an MCP client in your own backend, open one client per connection from its `transport()`, prefix each tool name with a label (`slack__send_message`), and route calls back by that prefix. There is no merge helper in the SDK — how tools are namespaced, filtered and recovered from differs enough per agent that it is better written where you can see it.
+
+**Filter before you hand tools to a model** — three providers is easily sixty tools, and accuracy drops as that list grows, so give the agent only the ones it needs.
 
 ## Error Handling
 
@@ -1641,7 +1583,7 @@ src/
 ├── index.ts              # Main entry point
 ├── auth.ts               # Auth API (authorization URL + code exchange)
 ├── proxy.ts              # Proxy API implementation
-├── mcp.ts                # MCP API (transport + managed sessions)
+├── mcp.ts                # MCP API (transport + hosted)
 ├── unify.ts              # Unify API implementation
 ├── utils.ts              # Utility functions
 ├── resources/

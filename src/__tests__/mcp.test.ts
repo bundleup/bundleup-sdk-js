@@ -1,5 +1,4 @@
 import { MCP } from '../mcp';
-import { MCPClient } from '../utils/mcp';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
@@ -25,16 +24,6 @@ describe('MCP', () => {
         Authorization: `Bearer ${apiKey}`,
         'BU-Connection-Id': connectionId,
       });
-    });
-  });
-
-  describe('connect', () => {
-    it('should return a managed client', () => {
-      expect(mcp.connect()).toBeInstanceOf(MCPClient);
-    });
-
-    it('should return a new client each call', () => {
-      expect(mcp.connect()).not.toBe(mcp.connect());
     });
   });
 

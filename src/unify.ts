@@ -4,12 +4,9 @@ import { Ticketing } from './unify/ticketing';
 import { CRM } from './unify/crm';
 import { Drive } from './unify/drive';
 import { Calendar } from './unify/calendar';
-import { MCP } from './unify/mcp';
 import { Me, type MeParams } from './unify/me';
 
 export class Unify {
-  private mcpClient?: MCP;
-
   constructor(
     private apiKey: string,
     private connectionId: string,
@@ -68,16 +65,5 @@ export class Unify {
    */
   async me(params: MeParams = {}) {
     return new Me(this.apiKey, this.connectionId).get(params);
-  }
-
-  /**
-   * Access the MCP API for the connection.
-   */
-  get mcp() {
-    if (!this.mcpClient) {
-      this.mcpClient = new MCP(this.apiKey, this.connectionId);
-    }
-
-    return this.mcpClient;
   }
 }
