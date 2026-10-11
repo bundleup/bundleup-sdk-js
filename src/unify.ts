@@ -1,6 +1,7 @@
 import { Chat } from './unify/chat';
 import { Git } from './unify/git';
-import { Ticketing } from './unify/ticketing';
+import { Tasks } from './unify/tasks';
+import { Helpdesk } from './unify/helpdesk';
 import { CRM } from './unify/crm';
 import { Drive } from './unify/drive';
 import { Calendar } from './unify/calendar';
@@ -27,10 +28,17 @@ export class Unify {
   }
 
   /**
-   * Access the Ticketing API for the connection.
+   * Access the Tasks API (issue trackers and project tools) for the connection.
    */
-  get ticketing() {
-    return new Ticketing(this.apiKey, this.connectionId);
+  get tasks() {
+    return new Tasks(this.apiKey, this.connectionId);
+  }
+
+  /**
+   * Access the Helpdesk API (customer support tools) for the connection.
+   */
+  get helpdesk() {
+    return new Helpdesk(this.apiKey, this.connectionId);
   }
 
   /**

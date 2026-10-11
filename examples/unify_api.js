@@ -45,17 +45,24 @@ try {
 }
 
 try {
-  const tickets = await unify.ticketing.tickets({ limit: 10 });
-  console.log(`Ticketing tickets: ${tickets.data?.length ?? 0}`);
+  const tasks = await unify.tasks.tasks({ limit: 10 });
+  console.log(`Tasks: ${tasks.data?.length ?? 0}`);
 
-  const [first] = tickets.data ?? [];
+  const [first] = tasks.data ?? [];
 
   if (first) {
-    const ticket = await unify.ticketing.ticket(first.id);
-    console.log(`Ticket ${ticket.data.id}: ${ticket.data.title}`);
+    const task = await unify.tasks.task(first.id);
+    console.log(`Task ${task.data.id}: ${task.data.title}`);
   }
 } catch (error) {
-  console.error(`Failed to fetch tickets: ${error.message}`);
+  console.error(`Failed to fetch tasks: ${error.message}`);
+}
+
+try {
+  const tickets = await unify.helpdesk.tickets({ limit: 10 });
+  console.log(`Helpdesk tickets: ${tickets.data?.length ?? 0}`);
+} catch (error) {
+  console.error(`Failed to fetch helpdesk tickets: ${error.message}`);
 }
 
 try {

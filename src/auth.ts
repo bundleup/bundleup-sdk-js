@@ -21,6 +21,39 @@ export interface ConnectionFromCodeResponse {
   integration_id: string;
 }
 
+export function buildAuthorizationUrl(params: AuthorizationUrlParams): string {
+  if (!isObject(params)) {
+    throw new Error('params is required');
+  }
+
+  if (isEmpty(params.clientId)) {
+    throw new Error('clientId is required');
+  }
+
+  if (isEmpty(params.integrationId)) {
+    throw new Error('integrationId is required');
+  }
+
+  if (isEmpty(params.redirectUri)) {
+    throw new Error('redirectUri is required');
+  }
+
+  const url = new URL(`${BASE_URL}/authorize`);
+  url.searchParams.set('client_id', params.clientId);
+  url.searchParams.set('integration_id', params.integrationId);
+  url.searchParams.set('redirect_uri', params.redirectUri);
+
+  if (params.externalId) {
+    url.searchParams.set('external_id', params.externalId);
+  }
+
+  if (params.state) {
+    url.searchParams.set('state', params.state);
+  }
+
+  return url.toString();
+}
+
 export class Auth {
   constructor(private apiKey: string) {}
 
@@ -37,36 +70,7 @@ export class Auth {
    * @returns The authorization URL as a string.
    */
   public buildAuthorizationUrl(params: AuthorizationUrlParams): string {
-    if (!isObject(params)) {
-      throw new Error('params is required');
-    }
-
-    if (isEmpty(params.clientId)) {
-      throw new Error('clientId is required');
-    }
-
-    if (isEmpty(params.integrationId)) {
-      throw new Error('integrationId is required');
-    }
-
-    if (isEmpty(params.redirectUri)) {
-      throw new Error('redirectUri is required');
-    }
-
-    const url = new URL(`${BASE_URL}/authorize`);
-    url.searchParams.set('client_id', params.clientId);
-    url.searchParams.set('integration_id', params.integrationId);
-    url.searchParams.set('redirect_uri', params.redirectUri);
-
-    if (params.externalId) {
-      url.searchParams.set('external_id', params.externalId);
-    }
-
-    if (params.state) {
-      url.searchParams.set('state', params.state);
-    }
-
-    return url.toString();
+    return buildAuthorizationUrl(params);
   }
 
   /**
@@ -75,9 +79,7 @@ export class Auth {
    * @param params - The code and the exact redirectUri used to authorize.
    * @returns The connection id, external id and integration id.
    */
-  public async getConnectionFromCode(
-    params: ConnectionFromCodeParams,
-  ): Promise<ConnectionFromCodeResponse> {
+  public async getConnectionFromCode(params: ConnectionFromCodeParams): Promise<ConnectionFromCodeResponse> {
     if (!isObject(params)) {
       throw new Error('params is required');
     }

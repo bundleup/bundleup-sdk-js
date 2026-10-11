@@ -1,23 +1,23 @@
 import { isEmpty } from '../utils/helpers';
 import { Base, type Params, type Response } from './base';
 
-export class Ticketing extends Base {
-  protected namespace = 'ticketing';
+export class Tasks extends Base {
+  protected namespace = 'tasks';
 
   /**
-   * Fetch tickets
-   * @param limit - Maximum number of tickets to retrieve.
+   * Fetch tasks
+   * @param limit - Maximum number of tasks to retrieve.
    * @param after - Cursor for pagination.
    * @param include_raw - Whether to include raw response data.
    * @returns A promise that resolves to the fetch response.
    */
-  async tickets({ limit = 100, after, include_raw = false }: Params = {}) {
-    const url = this.buildUrl('tickets', { limit, after, include_raw });
+  async tasks({ limit = 100, after, include_raw = false }: Params = {}) {
+    const url = this.buildUrl('tasks', { limit, after, include_raw });
 
     const response = await fetch(url, { headers: this.headers });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch ${this.namespace}/tickets: ${response.statusText}`);
+      throw new Error(`Failed to fetch ${this.namespace}/tasks: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -35,27 +35,27 @@ export class Ticketing extends Base {
   }
 
   /**
-   * Fetch a single ticket by ID.
+   * Fetch a single task by ID.
    *
    * Not supported by Basecamp, whose API only serves a to-do underneath its
    * project — an id on its own cannot address one.
    *
-   * @param id - The ID of the ticket.
+   * @param id - The ID of the task.
    * @param include_raw - Whether to include raw response data.
    * @returns A promise that resolves to the fetch response.
    * @throws If id is not provided.
    */
-  async ticket(id: string, { include_raw = false }: Params = {}) {
+  async task(id: string, { include_raw = false }: Params = {}) {
     if (isEmpty(id)) {
-      throw new Error('id is required to fetch a ticket.');
+      throw new Error('id is required to fetch a task.');
     }
 
-    const url = this.buildUrl(`tickets/${encodeURIComponent(id)}`, { include_raw });
+    const url = this.buildUrl(`tasks/${encodeURIComponent(id)}`, { include_raw });
 
     const response = await fetch(url, { headers: this.headers });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch ${this.namespace}/tickets/${id}: ${response.statusText}`);
+      throw new Error(`Failed to fetch ${this.namespace}/tasks/${id}: ${response.statusText}`);
     }
 
     const data = await response.json();

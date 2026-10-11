@@ -9,6 +9,10 @@ import { Connections } from './resources/connection';
 import { Integrations } from './resources/integration';
 import { Webhooks } from './resources/webhooks';
 
+// Helpers
+export type { AuthorizationUrlParams } from './auth';
+export { buildAuthorizationUrl } from './auth';
+
 export class BundleUp {
   private apiKey: string;
 

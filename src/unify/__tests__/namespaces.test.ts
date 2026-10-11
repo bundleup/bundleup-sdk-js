@@ -4,8 +4,9 @@ import { Chat } from '../chat';
 import { CRM } from '../crm';
 import { Drive } from '../drive';
 import { Git } from '../git';
+import { Helpdesk } from '../helpdesk';
 import { Me } from '../me';
-import { Ticketing } from '../ticketing';
+import { Tasks } from '../tasks';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
@@ -113,7 +114,7 @@ describe('Chat', () => {
   ])('should fetch %s', async (method, path) => {
     mockFetch.mockResolvedValueOnce(ok());
 
-    await (chat[method as 'users' | 'channels'])();
+    await chat[method as 'users' | 'channels']();
 
     expect(callUrl()).toContain(path);
   });
@@ -124,7 +125,7 @@ describe('Chat', () => {
   ])('should throw when %s fails', async (method, message) => {
     mockFetch.mockResolvedValueOnce(failed());
 
-    await expect((chat[method as 'users' | 'channels'])()).rejects.toThrow(message);
+    await expect(chat[method as 'users' | 'channels']()).rejects.toThrow(message);
   });
 
   describe('message', () => {
@@ -154,9 +155,7 @@ describe('Chat', () => {
     it('should throw on failure', async () => {
       mockFetch.mockResolvedValueOnce(failed('Forbidden', 403));
 
-      await expect(chat.message('C123', 'hi')).rejects.toThrow(
-        'Failed to post chat/channels/C123/message: Forbidden',
-      );
+      await expect(chat.message('C123', 'hi')).rejects.toThrow('Failed to post chat/channels/C123/message: Forbidden');
     });
   });
 
@@ -196,9 +195,7 @@ describe('Chat', () => {
     it('should throw on failure', async () => {
       mockFetch.mockResolvedValueOnce(failed('Not Found', 404));
 
-      await expect(chat.messages('C123')).rejects.toThrow(
-        'Failed to fetch chat/channels/C123/messages: Not Found',
-      );
+      await expect(chat.messages('C123')).rejects.toThrow('Failed to fetch chat/channels/C123/messages: Not Found');
     });
   });
 });
@@ -210,7 +207,7 @@ describe('CRM', () => {
   ])('should fetch %s', async (method, path) => {
     mockFetch.mockResolvedValueOnce(ok());
 
-    await (new CRM(apiKey, connectionId)[method as 'companies' | 'contacts'])();
+    await new CRM(apiKey, connectionId)[method as 'companies' | 'contacts']();
 
     expect(callUrl()).toContain(path);
   });
@@ -221,7 +218,7 @@ describe('CRM', () => {
   ])('should throw when %s fails', async (method, message) => {
     mockFetch.mockResolvedValueOnce(failed());
 
-    await expect((new CRM(apiKey, connectionId)[method as 'companies' | 'contacts'])()).rejects.toThrow(message);
+    await expect(new CRM(apiKey, connectionId)[method as 'companies' | 'contacts']()).rejects.toThrow(message);
   });
 });
 
@@ -284,31 +281,29 @@ describe('Calendar', () => {
   });
 });
 
-describe('Ticketing', () => {
-  it('should fetch tickets', async () => {
+describe('Tasks', () => {
+  it('should fetch tasks', async () => {
     mockFetch.mockResolvedValueOnce(ok());
 
-    await new Ticketing(apiKey, connectionId).tickets();
+    await new Tasks(apiKey, connectionId).tasks();
 
-    expect(callUrl()).toContain('ticketing/tickets');
+    expect(callUrl()).toContain('tasks/tasks');
   });
 
   it('should throw on failure', async () => {
     mockFetch.mockResolvedValueOnce(failed());
 
-    await expect(new Ticketing(apiKey, connectionId).tickets()).rejects.toThrow(
-      'Failed to fetch ticketing/tickets: Bad Gateway',
-    );
+    await expect(new Tasks(apiKey, connectionId).tasks()).rejects.toThrow('Failed to fetch tasks/tasks: Bad Gateway');
   });
 
   it('should fetch projects', async () => {
     mockFetch.mockResolvedValueOnce(ok());
 
-    await new Ticketing(apiKey, connectionId).projects({ limit: 5, after: 'cursor_1' });
+    await new Tasks(apiKey, connectionId).projects({ limit: 5, after: 'cursor_1' });
 
     const url = new URL(callUrl());
 
-    expect(url.pathname).toContain('ticketing/projects');
+    expect(url.pathname).toContain('tasks/projects');
     expect(url.searchParams.get('limit')).toBe('5');
     expect(url.searchParams.get('after')).toBe('cursor_1');
   });
@@ -316,31 +311,81 @@ describe('Ticketing', () => {
   it('should throw when projects fails', async () => {
     mockFetch.mockResolvedValueOnce(failed());
 
-    await expect(new Ticketing(apiKey, connectionId).projects()).rejects.toThrow(
-      'Failed to fetch ticketing/projects: Bad Gateway',
+    await expect(new Tasks(apiKey, connectionId).projects()).rejects.toThrow(
+      'Failed to fetch tasks/projects: Bad Gateway',
+    );
+  });
+
+  it('should fetch a single task', async () => {
+    mockFetch.mockResolvedValueOnce(ok({ data: { id: 'TKT-1' } }));
+
+    await new Tasks(apiKey, connectionId).task('TKT-1');
+
+    expect(callUrl()).toContain('tasks/tasks/TKT-1');
+  });
+
+  it('should encode the task id', async () => {
+    mockFetch.mockResolvedValueOnce(ok({ data: { id: 'a/b' } }));
+
+    await new Tasks(apiKey, connectionId).task('a/b');
+
+    expect(callUrl()).toContain('tasks/tasks/a%2Fb');
+  });
+
+  it('should throw without an id', async () => {
+    await expect(new Tasks(apiKey, connectionId).task('')).rejects.toThrow('id is required to fetch a task.');
+
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should throw when a single task fails', async () => {
+    mockFetch.mockResolvedValueOnce(failed('Not Found', 404));
+
+    await expect(new Tasks(apiKey, connectionId).task('TKT-1')).rejects.toThrow(
+      'Failed to fetch tasks/tasks/TKT-1: Not Found',
+    );
+  });
+});
+
+describe('Helpdesk', () => {
+  it('should fetch tickets', async () => {
+    mockFetch.mockResolvedValueOnce(ok());
+
+    await new Helpdesk(apiKey, connectionId).tickets({ limit: 5, after: 'cursor_1' });
+
+    const url = new URL(callUrl());
+
+    expect(url.pathname).toContain('helpdesk/tickets');
+    expect(url.searchParams.get('limit')).toBe('5');
+    expect(url.searchParams.get('after')).toBe('cursor_1');
+  });
+
+  it('should throw on failure', async () => {
+    mockFetch.mockResolvedValueOnce(failed());
+
+    await expect(new Helpdesk(apiKey, connectionId).tickets()).rejects.toThrow(
+      'Failed to fetch helpdesk/tickets: Bad Gateway',
     );
   });
 
   it('should fetch a single ticket', async () => {
-    mockFetch.mockResolvedValueOnce(ok({ data: { id: 'TKT-1' } }));
+    mockFetch.mockResolvedValueOnce(ok({ data: { id: '4182' } }));
 
-    await new Ticketing(apiKey, connectionId).ticket('TKT-1');
+    await new Helpdesk(apiKey, connectionId).ticket('4182');
 
-    expect(callUrl()).toContain('ticketing/tickets/TKT-1');
+    expect(callUrl()).toContain('helpdesk/tickets/4182');
   });
 
   it('should encode the ticket id', async () => {
     mockFetch.mockResolvedValueOnce(ok({ data: { id: 'a/b' } }));
 
-    await new Ticketing(apiKey, connectionId).ticket('a/b');
+    await new Helpdesk(apiKey, connectionId).ticket('a/b');
 
-    expect(callUrl()).toContain('ticketing/tickets/a%2Fb');
+    expect(callUrl()).toContain('helpdesk/tickets/a%2Fb');
   });
 
   it('should throw without an id', async () => {
-    await expect(new Ticketing(apiKey, connectionId).ticket('')).rejects.toThrow(
-      'id is required to fetch a ticket.',
-    );
+    await expect(new Helpdesk(apiKey, connectionId).ticket('')).rejects.toThrow('id is required to fetch a ticket.');
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -348,8 +393,8 @@ describe('Ticketing', () => {
   it('should throw when a single ticket fails', async () => {
     mockFetch.mockResolvedValueOnce(failed('Not Found', 404));
 
-    await expect(new Ticketing(apiKey, connectionId).ticket('TKT-1')).rejects.toThrow(
-      'Failed to fetch ticketing/tickets/TKT-1: Not Found',
+    await expect(new Helpdesk(apiKey, connectionId).ticket('4182')).rejects.toThrow(
+      'Failed to fetch helpdesk/tickets/4182: Not Found',
     );
   });
 });

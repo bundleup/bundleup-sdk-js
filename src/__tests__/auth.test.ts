@@ -1,5 +1,5 @@
 import { Auth } from '../auth';
-import { BundleUp } from '../index';
+import { BundleUp, buildAuthorizationUrl } from '../index';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
@@ -52,6 +52,35 @@ describe('Auth', () => {
       expect(() => auth.buildAuthorizationUrl({ ...base, [key]: '' })).toThrow(
         `${key} is required`,
       );
+    });
+  });
+
+  describe('buildAuthorizationUrl (package export)', () => {
+    const base = {
+      clientId: 'client_123',
+      integrationId: 'github',
+      redirectUri: 'https://app.example.com/callback',
+    };
+
+    it('builds the URL without an API key', () => {
+      const url = new URL(buildAuthorizationUrl({ ...base, externalId: 'user_42', state: 'xyz' }));
+
+      expect(`${url.origin}${url.pathname}`).toBe('https://auth.bundleup.io/authorize');
+      expect(Object.fromEntries(url.searchParams)).toEqual({
+        client_id: 'client_123',
+        integration_id: 'github',
+        redirect_uri: 'https://app.example.com/callback',
+        external_id: 'user_42',
+        state: 'xyz',
+      });
+    });
+
+    it('matches the Auth method', () => {
+      expect(buildAuthorizationUrl(base)).toBe(auth.buildAuthorizationUrl(base));
+    });
+
+    it('throws when a required param is missing', () => {
+      expect(() => buildAuthorizationUrl({ ...base, clientId: '' })).toThrow('clientId is required');
     });
   });
 

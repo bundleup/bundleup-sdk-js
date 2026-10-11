@@ -89,7 +89,7 @@ Runnable examples are available in the [`examples/`](./examples) directory:
 
 - [`examples/basic_usage.js`](./examples/basic_usage.js) - Client setup, connections, integrations, and webhooks
 - [`examples/proxy_api.js`](./examples/proxy_api.js) - Proxy API GET request with a connection
-- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, Ticketing, CRM, Drive, and Calendar endpoint usage
+- [`examples/unify_api.js`](./examples/unify_api.js) - Unify Chat, Git, Tasks, Helpdesk, CRM, Drive, and Calendar endpoint usage
 - [`examples/README.md`](./examples/README.md) - Setup and execution instructions
 
 ## Quick Start
@@ -522,6 +522,18 @@ const url = client.auth.buildAuthorizationUrl({
 });
 
 // Redirect the user to `url`
+```
+
+The URL needs no API key, so you can also build it where the key must not live, such as in the browser. Import the helper directly:
+
+```javascript
+import { buildAuthorizationUrl } from '@bundleup/sdk';
+
+const url = buildAuthorizationUrl({
+  clientId: 'your-client-id',
+  integrationId: 'github',
+  redirectUri: 'https://app.example.com/callback',
+});
 ```
 
 **Parameters:**
@@ -1106,20 +1118,20 @@ provider's default branch is used.
 }
 ```
 
-#### Ticketing API
+#### Tasks API
 
-The Ticketing API provides a unified interface for ticketing and project management platforms like Jira, Linear, and Asana.
+The Tasks API provides a unified interface for issue trackers and project management tools like Jira, Linear, Asana, Trello, ClickUp, monday.com, Basecamp, Wrike, and Todoist.
 
-##### List Tickets
+##### List Tasks
 
 ```javascript
-const result = await unify.ticketing.tickets({
+const result = await unify.tasks.tasks({
   limit: 100,
   after: null,
   include_raw: false,
 });
 
-console.log('Tickets:', result.data);
+console.log('Tasks:', result.data);
 ```
 
 **Response:**
@@ -1146,18 +1158,18 @@ console.log('Tickets:', result.data);
 **Filtering and sorting:**
 
 ```javascript
-const openTickets = result.data.filter(ticket => ticket.status === 'open');
+const openTasks = result.data.filter(task => task.status === 'open');
 const sortedByDate = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 ```
 
-##### Get a Ticket
+##### Get a Task
 
-Fetch one ticket by ID. Not supported by Basecamp, whose API only serves a to-do underneath its project.
+Fetch one task by ID. Not supported by Basecamp, whose API only serves a to-do underneath its project.
 
 ```javascript
-const result = await unify.ticketing.ticket('PROJ-123');
+const result = await unify.tasks.task('PROJ-123');
 
-console.log('Ticket:', result.data);
+console.log('Task:', result.data);
 ```
 
 **Response:**
@@ -1181,7 +1193,7 @@ A single resource carries no pagination, so there is no `metadata` on this respo
 ##### List Projects
 
 ```javascript
-const result = await unify.ticketing.projects({
+const result = await unify.tasks.projects({
   limit: 100,
   after: null,
   include_raw: false,
@@ -1212,6 +1224,57 @@ console.log('Projects:', result.data);
 ```
 
 **Note:** Not every platform returns every field. Jira does not expose creation or update timestamps for projects, so `created_at` and `updated_at` are `null` for Jira connections, and `status` is only set when Jira reports whether the project is archived.
+
+#### Helpdesk API
+
+The Helpdesk API provides a unified interface for customer support tools like Zendesk, ServiceNow, Zoho Desk, Gorgias, and Help Scout.
+
+##### List Tickets
+
+```javascript
+const result = await unify.helpdesk.tickets({
+  limit: 100,
+  after: null,
+  include_raw: false,
+});
+
+console.log('Tickets:', result.data);
+```
+
+**Response:**
+
+```typescript
+{
+  data: [
+    {
+      id: '4182',
+      title: 'Refund for order #1043',
+      description: 'Hi, my order arrived damaged...',
+      status: 'open',
+      priority: 'high',
+      requester: { id: '381920', name: 'Dana Ruiz', email: 'dana@example.com' },
+      url: 'https://acme.zendesk.com/agent/tickets/4182',
+      created_at: '2024-01-15T10:30:00Z',
+      updated_at: '2024-01-20T14:22:00Z'
+    }
+  ],
+  metadata: {
+    next: 'cursor_def456'
+  }
+}
+```
+
+##### Get a Ticket
+
+Fetch one support ticket by ID. On ServiceNow the ID is the incident's `sys_id`.
+
+```javascript
+const result = await unify.helpdesk.ticket('4182');
+
+console.log('Ticket:', result.data);
+```
+
+A single resource carries no pagination, so there is no `metadata` on this response.
 
 #### CRM API
 
@@ -1595,7 +1658,8 @@ src/
 │   ├── base.ts          # Base Unify class
 │   ├── chat.ts          # Chat Unify API
 │   ├── git.ts           # Git Unify API
-│   ├── ticketing.ts     # Ticketing Unify API
+│   ├── tasks.ts         # Tasks Unify API
+│   ├── helpdesk.ts      # Helpdesk Unify API
 │   ├── crm.ts           # CRM Unify API
 │   ├── drive.ts         # Drive Unify API
 │   └── calendar.ts      # Calendar Unify API

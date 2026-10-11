@@ -1,7 +1,8 @@
 import { Unify } from '../unify';
 import { Chat } from '../unify/chat';
 import { Git } from '../unify/git';
-import { Ticketing } from '../unify/ticketing';
+import { Tasks } from '../unify/tasks';
+import { Helpdesk } from '../unify/helpdesk';
 import { Calendar } from '../unify/calendar';
 import { CRM } from '../unify/crm';
 import { Drive } from '../unify/drive';
@@ -67,23 +68,43 @@ describe('Unify', () => {
     });
   });
 
-  describe('ticketing getter', () => {
-    it('should return a Ticketing instance', () => {
-      const ticketing = unify.ticketing;
-      expect(ticketing).toBeInstanceOf(Ticketing);
+  describe('tasks getter', () => {
+    it('should return a Tasks instance', () => {
+      const tasks = unify.tasks;
+      expect(tasks).toBeInstanceOf(Tasks);
     });
 
-    it('should create a new Ticketing instance each time', () => {
-      const ticketing1 = unify.ticketing;
-      const ticketing2 = unify.ticketing;
-      expect(ticketing1).not.toBe(ticketing2);
+    it('should create a new Tasks instance each time', () => {
+      const tasks1 = unify.tasks;
+      const tasks2 = unify.tasks;
+      expect(tasks1).not.toBe(tasks2);
     });
 
-    it('should initialize Ticketing with correct apiKey and connectionId', () => {
-      const ticketing = unify.ticketing;
+    it('should initialize Tasks with correct apiKey and connectionId', () => {
+      const tasks = unify.tasks;
       // Access protected properties for testing
-      expect((ticketing as any).apiKey).toBe(apiKey);
-      expect((ticketing as any).connectionId).toBe(connectionId);
+      expect((tasks as any).apiKey).toBe(apiKey);
+      expect((tasks as any).connectionId).toBe(connectionId);
+    });
+  });
+
+  describe('helpdesk getter', () => {
+    it('should return a Helpdesk instance', () => {
+      const helpdesk = unify.helpdesk;
+      expect(helpdesk).toBeInstanceOf(Helpdesk);
+    });
+
+    it('should create a new Helpdesk instance each time', () => {
+      const helpdesk1 = unify.helpdesk;
+      const helpdesk2 = unify.helpdesk;
+      expect(helpdesk1).not.toBe(helpdesk2);
+    });
+
+    it('should initialize Helpdesk with correct apiKey and connectionId', () => {
+      const helpdesk = unify.helpdesk;
+      // Access protected properties for testing
+      expect((helpdesk as any).apiKey).toBe(apiKey);
+      expect((helpdesk as any).connectionId).toBe(connectionId);
     });
   });
 
